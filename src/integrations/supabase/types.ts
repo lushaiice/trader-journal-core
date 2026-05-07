@@ -14,7 +14,268 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_journals: {
+        Row: {
+          created_at: string
+          energy: number | null
+          focus: number | null
+          id: string
+          journal_date: string
+          lessons: string | null
+          market_view: string | null
+          mood: number | null
+          post_market_notes: string | null
+          pre_market_notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy?: number | null
+          focus?: number | null
+          id?: string
+          journal_date?: string
+          lessons?: string | null
+          market_view?: string | null
+          mood?: number | null
+          post_market_notes?: string | null
+          pre_market_notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy?: number | null
+          focus?: number | null
+          id?: string
+          journal_date?: string
+          lessons?: string | null
+          market_view?: string | null
+          mood?: number | null
+          post_market_notes?: string | null
+          pre_market_notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      discipline_logs: {
+        Row: {
+          created_at: string
+          followed: boolean
+          id: string
+          log_date: string
+          notes: string | null
+          rule: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          followed?: boolean
+          id?: string
+          log_date?: string
+          notes?: string | null
+          rule: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          followed?: boolean
+          id?: string
+          log_date?: string
+          notes?: string | null
+          rule?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      portfolios: {
+        Row: {
+          base_capital: number | null
+          broker: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_capital?: number | null
+          broker?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_capital?: number | null
+          broker?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          experience_level: string | null
+          id: string
+          timezone: string | null
+          trading_style: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          experience_level?: string | null
+          id: string
+          timezone?: string | null
+          trading_style?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          experience_level?: string | null
+          id?: string
+          timezone?: string | null
+          trading_style?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      trade_exits: {
+        Row: {
+          created_at: string
+          exit_date: string
+          exit_price: number
+          fees: number | null
+          id: string
+          notes: string | null
+          quantity: number
+          trade_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exit_date?: string
+          exit_price: number
+          fees?: number | null
+          id?: string
+          notes?: string | null
+          quantity: number
+          trade_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exit_date?: string
+          exit_price?: number
+          fees?: number | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          trade_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_exits_trade_id_fkey"
+            columns: ["trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trades: {
+        Row: {
+          created_at: string
+          emotion_tags: string[] | null
+          entry_date: string
+          entry_price: number
+          id: string
+          instrument_type: string
+          notes: string | null
+          portfolio_id: string | null
+          quantity: number
+          screenshot_url: string | null
+          setup: string | null
+          side: string
+          status: string
+          stop_loss: number | null
+          strategy: string | null
+          symbol: string
+          target_price: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emotion_tags?: string[] | null
+          entry_date?: string
+          entry_price: number
+          id?: string
+          instrument_type?: string
+          notes?: string | null
+          portfolio_id?: string | null
+          quantity: number
+          screenshot_url?: string | null
+          setup?: string | null
+          side?: string
+          status?: string
+          stop_loss?: number | null
+          strategy?: string | null
+          symbol: string
+          target_price?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emotion_tags?: string[] | null
+          entry_date?: string
+          entry_price?: number
+          id?: string
+          instrument_type?: string
+          notes?: string | null
+          portfolio_id?: string | null
+          quantity?: number
+          screenshot_url?: string | null
+          setup?: string | null
+          side?: string
+          status?: string
+          stop_loss?: number | null
+          strategy?: string | null
+          symbol?: string
+          target_price?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trades_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
