@@ -80,7 +80,8 @@ export function TradeForm({ initial, onSaved }: TradeFormProps) {
   const save = useSaveTrade(initial?.trade.id);
 
   const methods = useForm<TradeFormValues>({
-    resolver: zodResolver(tradeFormSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(tradeFormSchema) as any,
     defaultValues: buildDefaults(initial),
     mode: "onBlur",
   });
