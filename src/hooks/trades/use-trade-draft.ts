@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useWatch, type Control } from "react-hook-form";
 import type { TradeFormValues } from "@/lib/trades/schema";
 
 const DRAFT_KEY = "trader-os:trade-draft:v1";
@@ -25,8 +25,10 @@ export function clearTradeDraft() {
 }
 
 /** Autosaves the in-progress trade form to localStorage. */
-export function useTradeDraftAutosave(enabled: boolean) {
-  const { control } = useFormContext<TradeFormValues>();
+export function useTradeDraftAutosave(
+  enabled: boolean,
+  control: Control<TradeFormValues>,
+) {
   const values = useWatch({ control });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 

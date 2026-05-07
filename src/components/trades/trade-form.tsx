@@ -109,7 +109,7 @@ export function TradeForm({ initial, onSaved }: TradeFormProps) {
   }, [initial?.trade.id]);
 
   // Autosave draft while creating a new trade.
-  useTradeDraftAutosave(isNew);
+  useTradeDraftAutosave(isNew, methods.control);
 
   const onSubmit = methods.handleSubmit(async (values) => {
     try {
