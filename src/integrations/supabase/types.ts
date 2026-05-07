@@ -67,6 +67,7 @@ export type Database = {
           log_date: string
           notes: string | null
           rule: string
+          trade_id: string | null
           user_id: string
         }
         Insert: {
@@ -76,6 +77,7 @@ export type Database = {
           log_date?: string
           notes?: string | null
           rule: string
+          trade_id?: string | null
           user_id: string
         }
         Update: {
@@ -85,9 +87,18 @@ export type Database = {
           log_date?: string
           notes?: string | null
           rule?: string
+          trade_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "discipline_logs_trade_id_fkey"
+            columns: ["trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       portfolios: {
         Row: {
@@ -204,65 +215,101 @@ export type Database = {
       }
       trades: {
         Row: {
+          brokerage: number
+          confidence: number | null
           created_at: string
+          discipline_feel: number | null
+          emotion_level: number | null
           emotion_tags: string[] | null
           entry_date: string
           entry_price: number
           id: string
           instrument_type: string
           notes: string | null
+          other_fees: number
+          planned_entry: number | null
+          planned_stop_loss: number | null
+          planned_target: number | null
           portfolio_id: string | null
           quantity: number
+          recovery_urge: number | null
           screenshot_url: string | null
           setup: string | null
+          setup_match: number | null
           side: string
           status: string
           stop_loss: number | null
           strategy: string | null
           symbol: string
+          tags: string[]
           target_price: number | null
+          taxes: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          brokerage?: number
+          confidence?: number | null
           created_at?: string
+          discipline_feel?: number | null
+          emotion_level?: number | null
           emotion_tags?: string[] | null
           entry_date?: string
           entry_price: number
           id?: string
           instrument_type?: string
           notes?: string | null
+          other_fees?: number
+          planned_entry?: number | null
+          planned_stop_loss?: number | null
+          planned_target?: number | null
           portfolio_id?: string | null
           quantity: number
+          recovery_urge?: number | null
           screenshot_url?: string | null
           setup?: string | null
+          setup_match?: number | null
           side?: string
           status?: string
           stop_loss?: number | null
           strategy?: string | null
           symbol: string
+          tags?: string[]
           target_price?: number | null
+          taxes?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          brokerage?: number
+          confidence?: number | null
           created_at?: string
+          discipline_feel?: number | null
+          emotion_level?: number | null
           emotion_tags?: string[] | null
           entry_date?: string
           entry_price?: number
           id?: string
           instrument_type?: string
           notes?: string | null
+          other_fees?: number
+          planned_entry?: number | null
+          planned_stop_loss?: number | null
+          planned_target?: number | null
           portfolio_id?: string | null
           quantity?: number
+          recovery_urge?: number | null
           screenshot_url?: string | null
           setup?: string | null
+          setup_match?: number | null
           side?: string
           status?: string
           stop_loss?: number | null
           strategy?: string | null
           symbol?: string
+          tags?: string[]
           target_price?: number | null
+          taxes?: number
           updated_at?: string
           user_id?: string
         }
