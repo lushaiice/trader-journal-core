@@ -77,11 +77,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Trader OS — Calm trading journal & analytics" },
       { name: "description", content: "A calm, modern behavioral trading journal and analytics platform for Indian retail traders." },
       { name: "author", content: "Trader OS" },
-      { property: "og:title", content: "Trader OS" },
-      { property: "og:description", content: "Behavioral trading journal & analytics for Indian retail traders." },
+      { property: "og:title", content: "Trader OS — Calm trading journal & analytics" },
+      { property: "og:description", content: "A calm, modern behavioral trading journal and analytics platform for Indian retail traders." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Trader OS — Calm trading journal & analytics" },
+      { name: "twitter:description", content: "A calm, modern behavioral trading journal and analytics platform for Indian retail traders." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6e1c15b2-8cc2-4a29-a1e2-dbd4738c1f1e/id-preview-91821c3a--484fb832-7870-4ce8-9755-094d806faa2f.lovable.app-1778124404025.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6e1c15b2-8cc2-4a29-a1e2-dbd4738c1f1e/id-preview-91821c3a--484fb832-7870-4ce8-9755-094d806faa2f.lovable.app-1778124404025.png" },
     ],
     links: [
       {
