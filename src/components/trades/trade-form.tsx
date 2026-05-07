@@ -24,6 +24,11 @@ import {
 import { tradeFormSchema, type TradeFormValues } from "@/lib/trades/schema";
 import { ASSET_TYPES, DIRECTIONS, DISCIPLINE_RULES } from "@/lib/trades/constants";
 import { useSaveTrade, type TradeWithRelations } from "@/lib/trades/api";
+import {
+  clearTradeDraft,
+  loadTradeDraft,
+  useTradeDraftAutosave,
+} from "@/hooks/trades/use-trade-draft";
 import { FormSection } from "./form-section";
 import { ExitsField } from "./exits-field";
 import { EmotionalSliders } from "./emotional-sliders";
@@ -78,6 +83,7 @@ function buildDefaults(initial?: TradeWithRelations): TradeFormValues {
 export function TradeForm({ initial, onSaved }: TradeFormProps) {
   const navigate = useNavigate();
   const save = useSaveTrade(initial?.trade.id);
+  const isNew = !initial;
 
   const methods = useForm<TradeFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,14 +92,29 @@ export function TradeForm({ initial, onSaved }: TradeFormProps) {
     mode: "onBlur",
   });
 
+  // Restore local draft for new trades.
+  useEffect(() => {
+    if (!isNew) return;
+    const draft = loadTradeDraft();
+    if (draft) {
+      methods.reset(draft);
+      toast.message("Draft restored", { description: "Picked up where you left off." });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (initial) methods.reset(buildDefaults(initial));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial?.trade.id]);
 
+  // Autosave draft while creating a new trade.
+  useTradeDraftAutosave(isNew);
+
   const onSubmit = methods.handleSubmit(async (values) => {
     try {
       const id = await save.mutateAsync(values as never);
+      if (isNew) clearTradeDraft();
       toast.success(initial ? "Trade updated" : "Trade saved");
       if (onSaved) onSaved(id);
       else navigate({ to: "/trades" });
