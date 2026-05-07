@@ -1,4 +1,4 @@
-import { useFormContext, useFieldArray } from "react-hook-form";
+import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,14 +10,37 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 import type { TradeFormValues } from "@/lib/trades/schema";
+import { remainingQty, totalExitQty } from "@/lib/trades/calculations";
 
 export function ExitsField() {
   const { control } = useFormContext<TradeFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name: "exits" });
 
+  const entryQty = Number(useWatch({ control, name: "quantity" }) || 0);
+  const exits = useWatch({ control, name: "exits" }) ?? [];
+  const filled = totalExitQty(exits as { quantity: number }[]);
+  const remaining = remainingQty(entryQty, exits as { quantity: number }[]);
+  const over = entryQty > 0 && filled > entryQty;
+
   return (
     <div className="space-y-3">
+      {entryQty > 0 && (
+        <div className="flex items-center justify-between text-xs rounded-md border border-border/70 bg-muted/30 px-3 py-2">
+          <span className="text-muted-foreground">
+            Filled <span className="tabular-nums text-foreground">{filled}</span> / {entryQty}
+          </span>
+          <span
+            className={cn(
+              "tabular-nums font-medium",
+              over ? "text-destructive" : remaining === 0 ? "text-success" : "text-foreground",
+            )}
+          >
+            {over ? `Over by ${filled - entryQty}` : `${remaining} remaining`}
+          </span>
+        </div>
+      )}
       {fields.length === 0 && (
         <p className="text-xs text-muted-foreground">
           No exits yet. Add one when you partially or fully close this trade.
