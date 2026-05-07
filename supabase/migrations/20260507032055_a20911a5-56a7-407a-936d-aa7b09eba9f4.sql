@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "trade screenshots are publicly readable" ON storage.objects;
