@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { TradeForm } from "./trade-form";
+import { PostTradeReview } from "./post-trade-review";
 import { useTradeQuery, useDeleteTrade, type TradeWithRelations } from "@/lib/trades/api";
 import { EMOTIONAL_QUESTIONS } from "@/lib/trades/constants";
 import {
@@ -267,6 +268,13 @@ function DetailView({
           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{trade.notes}</p>
         </>
       )}
+
+      <SectionLabel>Post-trade review</SectionLabel>
+      <PostTradeReview
+        tradeId={trade.id}
+        initialReview={(trade as TradeRow & { review_notes?: string | null }).review_notes}
+        initialLessons={(trade as TradeRow & { lessons_learned?: string | null }).lessons_learned}
+      />
     </>
   );
 }
