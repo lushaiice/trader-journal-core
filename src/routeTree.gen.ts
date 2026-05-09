@@ -12,8 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppWeeklyReviewRouteImport } from './routes/_app.weekly-review'
 import { Route as AppTradesRouteImport } from './routes/_app.trades'
+import { Route as AppTodayRouteImport } from './routes/_app.today'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppJournalTimelineRouteImport } from './routes/_app.journal-timeline'
 import { Route as AppJournalRouteImport } from './routes/_app.journal'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
@@ -33,14 +36,29 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppWeeklyReviewRoute = AppWeeklyReviewRouteImport.update({
+  id: '/weekly-review',
+  path: '/weekly-review',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTradesRoute = AppTradesRouteImport.update({
   id: '/trades',
   path: '/trades',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTodayRoute = AppTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppJournalTimelineRoute = AppJournalTimelineRouteImport.update({
+  id: '/journal-timeline',
+  path: '/journal-timeline',
   getParentRoute: () => AppRoute,
 } as any)
 const AppJournalRoute = AppJournalRouteImport.update({
@@ -71,8 +89,11 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/dashboard': typeof AppDashboardRoute
   '/journal': typeof AppJournalRoute
+  '/journal-timeline': typeof AppJournalTimelineRoute
   '/settings': typeof AppSettingsRoute
+  '/today': typeof AppTodayRoute
   '/trades': typeof AppTradesRoute
+  '/weekly-review': typeof AppWeeklyReviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -81,8 +102,11 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/dashboard': typeof AppDashboardRoute
   '/journal': typeof AppJournalRoute
+  '/journal-timeline': typeof AppJournalTimelineRoute
   '/settings': typeof AppSettingsRoute
+  '/today': typeof AppTodayRoute
   '/trades': typeof AppTradesRoute
+  '/weekly-review': typeof AppWeeklyReviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -93,8 +117,11 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/journal': typeof AppJournalRoute
+  '/_app/journal-timeline': typeof AppJournalTimelineRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/today': typeof AppTodayRoute
   '/_app/trades': typeof AppTradesRoute
+  '/_app/weekly-review': typeof AppWeeklyReviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -105,8 +132,11 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/dashboard'
     | '/journal'
+    | '/journal-timeline'
     | '/settings'
+    | '/today'
     | '/trades'
+    | '/weekly-review'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -115,8 +145,11 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/dashboard'
     | '/journal'
+    | '/journal-timeline'
     | '/settings'
+    | '/today'
     | '/trades'
+    | '/weekly-review'
   id:
     | '__root__'
     | '/'
@@ -126,8 +159,11 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/dashboard'
     | '/_app/journal'
+    | '/_app/journal-timeline'
     | '/_app/settings'
+    | '/_app/today'
     | '/_app/trades'
+    | '/_app/weekly-review'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -159,6 +195,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/weekly-review': {
+      id: '/_app/weekly-review'
+      path: '/weekly-review'
+      fullPath: '/weekly-review'
+      preLoaderRoute: typeof AppWeeklyReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/trades': {
       id: '/_app/trades'
       path: '/trades'
@@ -166,11 +209,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTradesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/today': {
+      id: '/_app/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AppTodayRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/journal-timeline': {
+      id: '/_app/journal-timeline'
+      path: '/journal-timeline'
+      fullPath: '/journal-timeline'
+      preLoaderRoute: typeof AppJournalTimelineRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/journal': {
@@ -209,8 +266,11 @@ interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppJournalRoute: typeof AppJournalRoute
+  AppJournalTimelineRoute: typeof AppJournalTimelineRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTodayRoute: typeof AppTodayRoute
   AppTradesRoute: typeof AppTradesRoute
+  AppWeeklyReviewRoute: typeof AppWeeklyReviewRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -218,8 +278,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppJournalRoute: AppJournalRoute,
+  AppJournalTimelineRoute: AppJournalTimelineRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTodayRoute: AppTodayRoute,
   AppTradesRoute: AppTradesRoute,
+  AppWeeklyReviewRoute: AppWeeklyReviewRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
