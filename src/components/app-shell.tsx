@@ -9,19 +9,29 @@ import {
   Settings,
   LogOut,
   TrendingUp,
+  Sun,
+  CalendarRange,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { to: "/today", label: "Today", icon: Sun },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/add-trade", label: "Add Trade", icon: PlusCircle },
-  { to: "/trades", label: "Trade History", icon: History },
+  { to: "/trades", label: "Trades", icon: History },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/journal", label: "Daily Journal", icon: NotebookPen },
+  { to: "/journal", label: "Journal", icon: NotebookPen },
+  { to: "/journal-timeline", label: "Timeline", icon: Clock },
+  { to: "/weekly-review", label: "Weekly Review", icon: CalendarRange },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
+
+const MOBILE_NAV = NAV.filter((n) =>
+  ["/today", "/add-trade", "/trades", "/analytics", "/weekly-review"].includes(n.to),
+);
 
 export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -99,8 +109,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Mobile bottom nav */}
         <nav className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-50">
-          <ul className="grid grid-cols-6">
-            {NAV.map((item) => {
+          <ul className="grid grid-cols-5">
+            {MOBILE_NAV.map((item) => {
               const active = path === item.to;
               const Icon = item.icon;
               return (
