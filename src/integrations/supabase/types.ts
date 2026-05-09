@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      checklist_responses: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          log_date: string
+          notes: string | null
+          readiness_score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          log_date?: string
+          notes?: string | null
+          readiness_score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          log_date?: string
+          notes?: string | null
+          readiness_score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_journals: {
         Row: {
           created_at: string
@@ -54,6 +87,45 @@ export type Database = {
           mood?: number | null
           post_market_notes?: string | null
           pre_market_notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_reviews: {
+        Row: {
+          created_at: string
+          did_well: string | null
+          emotionally_disciplined: boolean | null
+          followed_plan: boolean | null
+          id: string
+          improve_tomorrow: string | null
+          mistakes: string | null
+          review_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          did_well?: string | null
+          emotionally_disciplined?: boolean | null
+          followed_plan?: boolean | null
+          id?: string
+          improve_tomorrow?: string | null
+          mistakes?: string | null
+          review_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          did_well?: string | null
+          emotionally_disciplined?: boolean | null
+          followed_plan?: boolean | null
+          id?: string
+          improve_tomorrow?: string | null
+          mistakes?: string | null
+          review_date?: string
           updated_at?: string
           user_id?: string
         }
@@ -136,6 +208,48 @@ export type Database = {
         }
         Relationships: []
       }
+      process_quality_logs: {
+        Row: {
+          checklist_score: number | null
+          consistency_score: number | null
+          created_at: string
+          discipline_score: number | null
+          emotional_score: number | null
+          id: string
+          journaling_score: number | null
+          log_date: string
+          total_score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checklist_score?: number | null
+          consistency_score?: number | null
+          created_at?: string
+          discipline_score?: number | null
+          emotional_score?: number | null
+          id?: string
+          journaling_score?: number | null
+          log_date?: string
+          total_score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          checklist_score?: number | null
+          consistency_score?: number | null
+          created_at?: string
+          discipline_score?: number | null
+          emotional_score?: number | null
+          id?: string
+          journaling_score?: number | null
+          log_date?: string
+          total_score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -166,6 +280,36 @@ export type Database = {
           timezone?: string | null
           trading_style?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      session_notes: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          note_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          note_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          note_at?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -225,6 +369,7 @@ export type Database = {
           entry_price: number
           id: string
           instrument_type: string
+          lessons_learned: string | null
           notes: string | null
           other_fees: number
           planned_entry: number | null
@@ -233,6 +378,7 @@ export type Database = {
           portfolio_id: string | null
           quantity: number
           recovery_urge: number | null
+          review_notes: string | null
           screenshot_url: string | null
           setup: string | null
           setup_match: number | null
@@ -258,6 +404,7 @@ export type Database = {
           entry_price: number
           id?: string
           instrument_type?: string
+          lessons_learned?: string | null
           notes?: string | null
           other_fees?: number
           planned_entry?: number | null
@@ -266,6 +413,7 @@ export type Database = {
           portfolio_id?: string | null
           quantity: number
           recovery_urge?: number | null
+          review_notes?: string | null
           screenshot_url?: string | null
           setup?: string | null
           setup_match?: number | null
@@ -291,6 +439,7 @@ export type Database = {
           entry_price?: number
           id?: string
           instrument_type?: string
+          lessons_learned?: string | null
           notes?: string | null
           other_fees?: number
           planned_entry?: number | null
@@ -299,6 +448,7 @@ export type Database = {
           portfolio_id?: string | null
           quantity?: number
           recovery_urge?: number | null
+          review_notes?: string | null
           screenshot_url?: string | null
           setup?: string | null
           setup_match?: number | null
@@ -322,6 +472,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weekly_reviews: {
+        Row: {
+          best_setups: string | null
+          created_at: string
+          id: string
+          most_broken_rules: string | null
+          summary: string | null
+          updated_at: string
+          user_id: string
+          week_start: string
+          worst_setups: string | null
+        }
+        Insert: {
+          best_setups?: string | null
+          created_at?: string
+          id?: string
+          most_broken_rules?: string | null
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+          week_start: string
+          worst_setups?: string | null
+        }
+        Update: {
+          best_setups?: string | null
+          created_at?: string
+          id?: string
+          most_broken_rules?: string | null
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+          worst_setups?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
