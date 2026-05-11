@@ -134,7 +134,7 @@ function TodayPage() {
       processQualityScore({
         checklist,
         disciplineFollowRate,
-        emotionalScore: emotionAvg.discipline,
+        emotionalScoreOf5: emotionAvg.discipline,
         journaledToday,
         consistencyDays,
       }),
