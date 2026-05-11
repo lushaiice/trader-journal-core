@@ -100,7 +100,18 @@ export async function fetchDailyReview(
       .eq("review_date", date)
       .maybeSingle();
     if (error) throw error;
-    return { ok: true, data: data ?? null };
+    return {
+      ok: true,
+      data: data
+        ? {
+            did_well: data.did_well ?? "",
+            mistakes: data.mistakes ?? "",
+            emotionally_disciplined: data.emotionally_disciplined,
+            followed_plan: data.followed_plan,
+            improve_tomorrow: data.improve_tomorrow ?? "",
+          }
+        : null,
+    };
   } catch (e) {
     return fail(e);
   }
