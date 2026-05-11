@@ -9,6 +9,8 @@ import {
   EmotionalSnapshot,
   SessionNotes,
   QuickCaptureModal,
+  StreakCard,
+  ContinuitySummary,
 } from "@/components/workspace";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -16,8 +18,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
   processQualityScore,
+  streakSummary,
+  buildInsights,
   type ProcessQualityBreakdown,
-} from "@/lib/workspace/process-quality";
+  type StreakSummary,
+} from "@/lib/behavior";
+import {
+  fetchJournalDates,
+  fetchReviewDates,
+  fetchChecklistDates,
+  saveDailyJournal,
+  saveProcessLog,
+} from "@/services/workspace";
 import type { ChecklistResponses } from "@/lib/workspace/constants";
 
 export const Route = createFileRoute("/_app/today")({
