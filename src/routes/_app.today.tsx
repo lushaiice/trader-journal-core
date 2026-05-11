@@ -147,24 +147,6 @@ function TodayPage() {
     return () => clearTimeout(t);
   }, [focus, marketView, user, dateStr]);
 
-  // Autosave focus + market view
-  useEffect(() => {
-    if (!user) return;
-    const t = setTimeout(async () => {
-      await supabase.from("daily_journals").upsert(
-        {
-          user_id: user.id,
-          journal_date: dateStr,
-          market_view: marketView,
-          pre_market_notes: focus,
-        },
-        { onConflict: "user_id,journal_date" },
-      );
-      setJournaledToday(Boolean(focus || marketView));
-    }, 700);
-    return () => clearTimeout(t);
-  }, [focus, marketView, user, dateStr]);
-
   const score: ProcessQualityBreakdown = useMemo(
     () =>
       processQualityScore({
@@ -177,23 +159,11 @@ function TodayPage() {
     [checklist, disciplineFollowRate, emotionAvg.discipline, journaledToday, consistencyDays],
   );
 
-  // Persist process quality snapshot
+  // Persist process quality snapshot via service layer
   useEffect(() => {
     if (!user) return;
-    const t = setTimeout(async () => {
-      await supabase.from("process_quality_logs").upsert(
-        {
-          user_id: user.id,
-          log_date: dateStr,
-          checklist_score: score.checklist,
-          discipline_score: score.discipline,
-          emotional_score: score.emotional,
-          journaling_score: score.journaling,
-          consistency_score: score.consistency,
-          total_score: score.total,
-        },
-        { onConflict: "user_id,log_date" },
-      );
+    const t = setTimeout(() => {
+      void saveProcessLog(user.id, dateStr, score);
     }, 1200);
     return () => clearTimeout(t);
   }, [score, user, dateStr]);
