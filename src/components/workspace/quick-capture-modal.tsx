@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { SESSION_NOTE_CATEGORIES } from "@/lib/workspace/constants";
+import { createNote } from "@/services/workspace";
+import {
+  readLocalDraft,
+  clearLocalDraft,
+  useLocalDraft,
+} from "@/hooks/use-local-draft";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -24,6 +29,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
+const DRAFT_KEY = "trader-os:quick-capture-draft:v1";
+
 export function QuickCaptureModal() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -31,19 +38,26 @@ export function QuickCaptureModal() {
   const [category, setCategory] = useState("observation");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    const d = readLocalDraft<{ body: string; category: string }>(DRAFT_KEY);
+    if (d) {
+      setBody(d.body);
+      setCategory(d.category);
+    }
+  }, []);
+
+  useLocalDraft(DRAFT_KEY, { body, category }, body.trim().length > 0);
+
   const save = async () => {
     if (!user || !body.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from("session_notes").insert({
-      user_id: user.id,
-      body: body.trim(),
-      category,
-    });
+    const res = await createNote(user.id, body.trim(), category);
     setSaving(false);
-    if (error) {
-      toast.error("Could not save note");
+    if (!res.ok) {
+      toast.error("Couldn't save — kept locally");
       return;
     }
+    clearLocalDraft(DRAFT_KEY);
     setBody("");
     setOpen(false);
     toast.success("Captured");
@@ -54,7 +68,8 @@ export function QuickCaptureModal() {
       <DrawerTrigger asChild>
         <Button
           size="icon"
-          className="md:hidden fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg z-40"
+          className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 h-12 w-12 rounded-full shadow-lg z-40"
+          aria-label="Quick capture"
         >
           <Plus className="h-5 w-5" />
         </Button>
@@ -85,7 +100,7 @@ export function QuickCaptureModal() {
             </SelectContent>
           </Select>
         </div>
-        <DrawerFooter>
+        <DrawerFooter className="pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <Button onClick={save} disabled={!body.trim() || saving}>
             Save
           </Button>

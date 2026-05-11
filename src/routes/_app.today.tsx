@@ -9,6 +9,8 @@ import {
   EmotionalSnapshot,
   SessionNotes,
   QuickCaptureModal,
+  StreakCard,
+  ContinuitySummary,
 } from "@/components/workspace";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -16,8 +18,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
   processQualityScore,
+  streakSummary,
+  buildInsights,
   type ProcessQualityBreakdown,
-} from "@/lib/workspace/process-quality";
+  type StreakSummary,
+} from "@/lib/behavior";
+import {
+  fetchJournalDates,
+  fetchReviewDates,
+  fetchChecklistDates,
+  saveDailyJournal,
+  saveProcessLog,
+} from "@/services/workspace";
 import type { ChecklistResponses } from "@/lib/workspace/constants";
 
 export const Route = createFileRoute("/_app/today")({
@@ -50,6 +62,10 @@ function TodayPage() {
   const [journaledToday, setJournaledToday] = useState(false);
   const [consistencyDays, setConsistencyDays] = useState(0);
   const [tradeCount, setTradeCount] = useState(0);
+  const emptyStreak: StreakSummary = { current: 0, longest: 0, last7: 0, last30: 0 };
+  const [journalStreak, setJournalStreak] = useState<StreakSummary>(emptyStreak);
+  const [reviewStreak, setReviewStreak] = useState<StreakSummary>(emptyStreak);
+  const [checklistStreak, setChecklistStreak] = useState<StreakSummary>(emptyStreak);
 
   // Load today's journal pre-fill (focus stored as market_view or pre_market_notes)
   useEffect(() => {
@@ -99,32 +115,34 @@ function TodayPage() {
         setDisciplineFollowRate(Math.round((followed / disc.length) * 100));
       }
 
-      // Consistency: journaled days in last 7
-      const sevenAgo = format(subDays(today, 6), "yyyy-MM-dd");
-      const { data: journals } = await supabase
-        .from("daily_journals")
-        .select("journal_date")
-        .eq("user_id", user.id)
-        .gte("journal_date", sevenAgo);
-      setConsistencyDays(new Set(journals?.map((j) => j.journal_date)).size);
+      // Streaks + consistency from last 30 days
+      const since = format(subDays(today, 29), "yyyy-MM-dd");
+      const [j, r, c] = await Promise.all([
+        fetchJournalDates(user.id, since),
+        fetchReviewDates(user.id, since),
+        fetchChecklistDates(user.id, since),
+      ]);
+      const jDates = j.ok ? j.data : [];
+      const rDates = r.ok ? r.data : [];
+      const cDates = c.ok ? c.data : [];
+      const jSummary = streakSummary(jDates, today);
+      setJournalStreak(jSummary);
+      setReviewStreak(streakSummary(rDates, today));
+      setChecklistStreak(streakSummary(cDates, today));
+      setConsistencyDays(jSummary.last7);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, dateStr]);
 
-  // Autosave focus + market view
+  // Autosave focus + market view via service layer
   useEffect(() => {
     if (!user) return;
     const t = setTimeout(async () => {
-      await supabase.from("daily_journals").upsert(
-        {
-          user_id: user.id,
-          journal_date: dateStr,
-          market_view: marketView,
-          pre_market_notes: focus,
-        },
-        { onConflict: "user_id,journal_date" },
-      );
-      setJournaledToday(Boolean(focus || marketView));
+      const res = await saveDailyJournal(user.id, dateStr, {
+        market_view: marketView,
+        pre_market_notes: focus,
+      });
+      if (res.ok) setJournaledToday(Boolean(focus || marketView));
     }, 700);
     return () => clearTimeout(t);
   }, [focus, marketView, user, dateStr]);
@@ -134,30 +152,18 @@ function TodayPage() {
       processQualityScore({
         checklist,
         disciplineFollowRate,
-        emotionalScore: emotionAvg.discipline,
+        emotionalScoreOf5: emotionAvg.discipline,
         journaledToday,
         consistencyDays,
       }),
     [checklist, disciplineFollowRate, emotionAvg.discipline, journaledToday, consistencyDays],
   );
 
-  // Persist process quality snapshot
+  // Persist process quality snapshot via service layer
   useEffect(() => {
     if (!user) return;
-    const t = setTimeout(async () => {
-      await supabase.from("process_quality_logs").upsert(
-        {
-          user_id: user.id,
-          log_date: dateStr,
-          checklist_score: score.checklist,
-          discipline_score: score.discipline,
-          emotional_score: score.emotional,
-          journaling_score: score.journaling,
-          consistency_score: score.consistency,
-          total_score: score.total,
-        },
-        { onConflict: "user_id,log_date" },
-      );
+    const t = setTimeout(() => {
+      void saveProcessLog(user.id, dateStr, score);
     }, 1200);
     return () => clearTimeout(t);
   }, [score, user, dateStr]);
@@ -217,49 +223,27 @@ function TodayPage() {
             ]}
           />
 
-          <BehavioralInsights
-            score={score.total}
-            consistency={consistencyDays}
-            tradeCount={tradeCount}
+          <StreakCard
+            reflection={reviewStreak}
+            checklist={checklistStreak}
+            journal={journalStreak}
+          />
+
+          <ContinuitySummary
+            observations={buildInsights({
+              processScore: score.total,
+              consistencyDays,
+              tradeCount,
+              reflectionStreak: reviewStreak.current,
+              checklistStreak: checklistStreak.current,
+              recentDisciplineAvg: disciplineFollowRate,
+              monthlyDisciplineTrend: null,
+            })}
           />
         </div>
       </div>
 
       <QuickCaptureModal />
     </>
-  );
-}
-
-function BehavioralInsights({
-  score,
-  consistency,
-  tradeCount,
-}: {
-  score: number;
-  consistency: number;
-  tradeCount: number;
-}) {
-  const insights: string[] = [];
-  if (consistency >= 5) insights.push(`You've journaled ${consistency} of the last 7 days. Consistency is compounding.`);
-  if (score < 50 && tradeCount > 0) insights.push("Process quality is soft today. Slow down before the next trade.");
-  if (score >= 75) insights.push("Process is sharp today. Protect this state — fewer trades, higher quality.");
-  if (tradeCount === 0) insights.push("No trades yet. Patience is a position too.");
-
-  if (!insights.length) return null;
-
-  return (
-    <div className="surface-card p-5 md:p-6">
-      <h3 className="font-medium mb-3">Quiet observations</h3>
-      <ul className="space-y-2">
-        {insights.map((i) => (
-          <li
-            key={i}
-            className="text-sm text-muted-foreground border-l-2 border-primary/40 pl-3 py-0.5"
-          >
-            {i}
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

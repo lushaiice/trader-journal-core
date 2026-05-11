@@ -7,3 +7,5 @@ export { QuickCaptureModal } from "./quick-capture-modal";
 export { JournalTimelineCard, type TimelineDay } from "./journal-timeline-card";
 export { TradingCalendar, type CalendarDay } from "./trading-calendar";
 export { WeeklyReviewCard, type WeeklySummary } from "./weekly-review-card";
+export { StreakCard } from "./streak-card";
+export { ContinuitySummary } from "./continuity-summary";
