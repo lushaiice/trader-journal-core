@@ -223,49 +223,27 @@ function TodayPage() {
             ]}
           />
 
-          <BehavioralInsights
-            score={score.total}
-            consistency={consistencyDays}
-            tradeCount={tradeCount}
+          <StreakCard
+            reflection={reviewStreak}
+            checklist={checklistStreak}
+            journal={journalStreak}
+          />
+
+          <ContinuitySummary
+            observations={buildInsights({
+              processScore: score.total,
+              consistencyDays,
+              tradeCount,
+              reflectionStreak: reviewStreak.current,
+              checklistStreak: checklistStreak.current,
+              recentDisciplineAvg: disciplineFollowRate,
+              monthlyDisciplineTrend: null,
+            })}
           />
         </div>
       </div>
 
       <QuickCaptureModal />
     </>
-  );
-}
-
-function BehavioralInsights({
-  score,
-  consistency,
-  tradeCount,
-}: {
-  score: number;
-  consistency: number;
-  tradeCount: number;
-}) {
-  const insights: string[] = [];
-  if (consistency >= 5) insights.push(`You've journaled ${consistency} of the last 7 days. Consistency is compounding.`);
-  if (score < 50 && tradeCount > 0) insights.push("Process quality is soft today. Slow down before the next trade.");
-  if (score >= 75) insights.push("Process is sharp today. Protect this state — fewer trades, higher quality.");
-  if (tradeCount === 0) insights.push("No trades yet. Patience is a position too.");
-
-  if (!insights.length) return null;
-
-  return (
-    <div className="surface-card p-5 md:p-6">
-      <h3 className="font-medium mb-3">Quiet observations</h3>
-      <ul className="space-y-2">
-        {insights.map((i) => (
-          <li
-            key={i}
-            className="text-sm text-muted-foreground border-l-2 border-primary/40 pl-3 py-0.5"
-          >
-            {i}
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
