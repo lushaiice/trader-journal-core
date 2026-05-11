@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { CheckCircle2, Circle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
   CHECKLIST_ITEMS,
   type ChecklistResponses,
-  checklistCompletion,
-  readinessScore,
 } from "@/lib/workspace/constants";
+import { readinessScore, checklistCompletion } from "@/lib/behavior";
+import { fetchChecklist, saveChecklist } from "@/services/workspace";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
@@ -27,14 +26,9 @@ export function ChecklistCard({ date = new Date(), onChange }: Props) {
     if (!user) return;
     let active = true;
     (async () => {
-      const { data } = await supabase
-        .from("checklist_responses")
-        .select("items")
-        .eq("user_id", user.id)
-        .eq("log_date", dateStr)
-        .maybeSingle();
+      const res = await fetchChecklist(user.id, dateStr);
       if (!active) return;
-      setItems((data?.items as ChecklistResponses | undefined) ?? {});
+      setItems(res.ok && res.data ? res.data.items : {});
       setLoading(false);
     })();
     return () => {
@@ -53,16 +47,7 @@ export function ChecklistCard({ date = new Date(), onChange }: Props) {
     if (!user) return;
     const next = { ...items, [id]: value };
     setItems(next);
-    const nextScore = readinessScore(next);
-    await supabase.from("checklist_responses").upsert(
-      {
-        user_id: user.id,
-        log_date: dateStr,
-        items: next,
-        readiness_score: nextScore,
-      },
-      { onConflict: "user_id,log_date" },
-    );
+    await saveChecklist(user.id, dateStr, next, readinessScore(next));
   };
 
   return (

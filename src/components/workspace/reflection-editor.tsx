@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Check, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import {
+  fetchDailyReview,
+  saveDailyReview,
+  type DailyReview,
+} from "@/services/workspace";
+import {
+  readLocalDraft,
+  clearLocalDraft,
+  useLocalDraft,
+  useOnlineStatus,
+  type SaveState,
+} from "@/hooks/use-local-draft";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { SyncIndicator } from "@/components/sync-indicator";
 
-interface ReviewState {
-  did_well: string;
-  mistakes: string;
-  emotionally_disciplined: boolean | null;
-  followed_plan: boolean | null;
-  improve_tomorrow: string;
-}
-
-const EMPTY: ReviewState = {
+const EMPTY: DailyReview = {
   did_well: "",
   mistakes: "",
   emotionally_disciplined: null,
@@ -26,46 +29,55 @@ const EMPTY: ReviewState = {
 export function ReflectionEditor({ date = new Date() }: { date?: Date }) {
   const { user } = useAuth();
   const dateStr = format(date, "yyyy-MM-dd");
-  const [state, setState] = useState<ReviewState>(EMPTY);
-  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const draftKey = `trader-os:reflection:${dateStr}`;
+  const [state, setState] = useState<DailyReview>(EMPTY);
+  const [status, setStatus] = useState<SaveState>("idle");
   const [loaded, setLoaded] = useState(false);
+  const online = useOnlineStatus();
+
+  // local-first restore
+  useEffect(() => {
+    const draft = readLocalDraft<DailyReview>(draftKey);
+    if (draft) setState(draft);
+  }, [draftKey]);
 
   useEffect(() => {
     if (!user) return;
+    let active = true;
     (async () => {
-      const { data } = await supabase
-        .from("daily_reviews")
-        .select("did_well,mistakes,emotionally_disciplined,followed_plan,improve_tomorrow")
-        .eq("user_id", user.id)
-        .eq("review_date", dateStr)
-        .maybeSingle();
-      if (data) {
-        setState({
-          did_well: data.did_well ?? "",
-          mistakes: data.mistakes ?? "",
-          emotionally_disciplined: data.emotionally_disciplined,
-          followed_plan: data.followed_plan,
-          improve_tomorrow: data.improve_tomorrow ?? "",
-        });
+      const res = await fetchDailyReview(user.id, dateStr);
+      if (!active) return;
+      if (res.ok && res.data) {
+        // server wins on initial hydration
+        setState(res.data);
       }
       setLoaded(true);
     })();
+    return () => {
+      active = false;
+    };
   }, [user, dateStr]);
 
+  // local draft autosave
+  useLocalDraft(draftKey, state, loaded);
+
+  // remote autosave
   useEffect(() => {
     if (!user || !loaded) return;
     setStatus("saving");
     const t = setTimeout(async () => {
-      await supabase.from("daily_reviews").upsert(
-        { user_id: user.id, review_date: dateStr, ...state },
-        { onConflict: "user_id,review_date" },
-      );
-      setStatus("saved");
+      const res = await saveDailyReview(user.id, dateStr, state);
+      if (res.ok) {
+        setStatus("saved");
+        clearLocalDraft(draftKey);
+      } else {
+        setStatus("error");
+      }
     }, 700);
     return () => clearTimeout(t);
-  }, [state, user, dateStr, loaded]);
+  }, [state, user, dateStr, loaded, draftKey]);
 
-  const update = <K extends keyof ReviewState>(key: K, value: ReviewState[K]) =>
+  const update = <K extends keyof DailyReview>(key: K, value: DailyReview[K]) =>
     setState((s) => ({ ...s, [key]: value }));
 
   return (
@@ -77,17 +89,7 @@ export function ReflectionEditor({ date = new Date() }: { date?: Date }) {
             A few minutes here compounds over months.
           </p>
         </div>
-        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-          {status === "saving" ? (
-            <>
-              <Loader2 className="h-3 w-3 animate-spin" /> Saving
-            </>
-          ) : status === "saved" ? (
-            <>
-              <Check className="h-3 w-3 text-success" /> Saved
-            </>
-          ) : null}
-        </div>
+        <SyncIndicator state={status} online={online} />
       </div>
 
       <Field label="What did I do well today?">

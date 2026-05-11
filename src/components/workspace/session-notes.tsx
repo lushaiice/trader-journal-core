@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Plus, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { SESSION_NOTE_CATEGORIES } from "@/lib/workspace/constants";
+import {
+  listTodayNotes,
+  createNote,
+  deleteNote,
+  type SessionNote,
+} from "@/services/workspace";
+import {
+  readLocalDraft,
+  clearLocalDraft,
+  useLocalDraft,
+  useOnlineStatus,
+} from "@/hooks/use-local-draft";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,30 +24,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
-interface Note {
-  id: string;
-  body: string;
-  category: string;
-  note_at: string;
-}
+const DRAFT_KEY = "trader-os:session-note-draft:v1";
 
 export function SessionNotes() {
   const { user } = useAuth();
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<SessionNote[]>([]);
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("observation");
+  const online = useOnlineStatus();
+
+  // restore draft
+  useEffect(() => {
+    const d = readLocalDraft<{ body: string; category: string }>(DRAFT_KEY);
+    if (d) {
+      setBody(d.body);
+      setCategory(d.category);
+    }
+  }, []);
+
+  useLocalDraft(DRAFT_KEY, { body, category }, body.trim().length > 0);
 
   const load = async () => {
     if (!user) return;
     const today = format(new Date(), "yyyy-MM-dd");
-    const { data } = await supabase
-      .from("session_notes")
-      .select("id,body,category,note_at")
-      .eq("user_id", user.id)
-      .gte("note_at", `${today}T00:00:00`)
-      .order("note_at", { ascending: false });
-    setNotes(data ?? []);
+    const res = await listTodayNotes(user.id, today);
+    if (res.ok) setNotes(res.data);
   };
 
   useEffect(() => {
@@ -46,27 +60,39 @@ export function SessionNotes() {
 
   const add = async () => {
     if (!user || !body.trim()) return;
-    await supabase.from("session_notes").insert({
-      user_id: user.id,
-      body: body.trim(),
-      category,
-    });
+    const res = await createNote(user.id, body.trim(), category);
+    if (!res.ok) {
+      toast.error("Couldn't save — kept locally");
+      return;
+    }
     setBody("");
+    clearLocalDraft(DRAFT_KEY);
     void load();
   };
 
   const remove = async (id: string) => {
-    await supabase.from("session_notes").delete().eq("id", id);
+    const res = await deleteNote(id);
+    if (!res.ok) {
+      toast.error("Couldn't delete");
+      return;
+    }
     void load();
   };
 
   return (
     <div className="surface-card p-5 md:p-6 space-y-4">
-      <div>
-        <h3 className="font-medium">Session notes</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Quick observations during the session.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="font-medium">Session notes</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Quick observations during the session.
+          </p>
+        </div>
+        {!online && (
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+            Offline
+          </span>
+        )}
       </div>
 
       <div className="space-y-2">
