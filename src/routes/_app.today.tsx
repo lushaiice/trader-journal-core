@@ -62,6 +62,10 @@ function TodayPage() {
   const [journaledToday, setJournaledToday] = useState(false);
   const [consistencyDays, setConsistencyDays] = useState(0);
   const [tradeCount, setTradeCount] = useState(0);
+  const emptyStreak: StreakSummary = { current: 0, longest: 0, last7: 0, last30: 0 };
+  const [journalStreak, setJournalStreak] = useState<StreakSummary>(emptyStreak);
+  const [reviewStreak, setReviewStreak] = useState<StreakSummary>(emptyStreak);
+  const [checklistStreak, setChecklistStreak] = useState<StreakSummary>(emptyStreak);
 
   // Load today's journal pre-fill (focus stored as market_view or pre_market_notes)
   useEffect(() => {
@@ -111,17 +115,37 @@ function TodayPage() {
         setDisciplineFollowRate(Math.round((followed / disc.length) * 100));
       }
 
-      // Consistency: journaled days in last 7
-      const sevenAgo = format(subDays(today, 6), "yyyy-MM-dd");
-      const { data: journals } = await supabase
-        .from("daily_journals")
-        .select("journal_date")
-        .eq("user_id", user.id)
-        .gte("journal_date", sevenAgo);
-      setConsistencyDays(new Set(journals?.map((j) => j.journal_date)).size);
+      // Streaks + consistency from last 30 days
+      const since = format(subDays(today, 29), "yyyy-MM-dd");
+      const [j, r, c] = await Promise.all([
+        fetchJournalDates(user.id, since),
+        fetchReviewDates(user.id, since),
+        fetchChecklistDates(user.id, since),
+      ]);
+      const jDates = j.ok ? j.data : [];
+      const rDates = r.ok ? r.data : [];
+      const cDates = c.ok ? c.data : [];
+      const jSummary = streakSummary(jDates, today);
+      setJournalStreak(jSummary);
+      setReviewStreak(streakSummary(rDates, today));
+      setChecklistStreak(streakSummary(cDates, today));
+      setConsistencyDays(jSummary.last7);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, dateStr]);
+
+  // Autosave focus + market view via service layer
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(async () => {
+      const res = await saveDailyJournal(user.id, dateStr, {
+        market_view: marketView,
+        pre_market_notes: focus,
+      });
+      if (res.ok) setJournaledToday(Boolean(focus || marketView));
+    }, 700);
+    return () => clearTimeout(t);
+  }, [focus, marketView, user, dateStr]);
 
   // Autosave focus + market view
   useEffect(() => {
