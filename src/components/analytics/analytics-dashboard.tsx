@@ -171,6 +171,18 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
             tooltip="Per-trade Sharpe ratio (return ÷ stdev)."
           />
           <MetricCard
+            label="Adjusted return"
+            value={formatPercent(capitalReturn.capitalAdjustedReturn)}
+            tone={
+              capitalReturn.capitalAdjustedReturn != null &&
+              capitalReturn.capitalAdjustedReturn >= 0
+                ? "positive"
+                : "negative"
+            }
+            icon={Wallet}
+            hint={baseCapital > 0 ? `Base ${formatINR(baseCapital)}` : "Set capital"}
+            tooltip="Net trading P&L ÷ average deployed capital. Excludes deposits and withdrawals."
+          <MetricCard
             label="Total trades"
             value={String(summary.tradeCount)}
             icon={Hash}
