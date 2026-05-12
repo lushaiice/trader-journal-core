@@ -86,12 +86,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "A calm, modern behavioral trading journal and analytics platform for Indian retail traders." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6e1c15b2-8cc2-4a29-a1e2-dbd4738c1f1e/id-preview-91821c3a--484fb832-7870-4ce8-9755-094d806faa2f.lovable.app-1778124404025.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6e1c15b2-8cc2-4a29-a1e2-dbd4738c1f1e/id-preview-91821c3a--484fb832-7870-4ce8-9755-094d806faa2f.lovable.app-1778124404025.png" },
+      { name: "theme-color", content: "#0b0b0f" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Trader OS" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
   shellComponent: RootShell,
