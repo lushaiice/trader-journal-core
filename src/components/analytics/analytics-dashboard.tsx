@@ -89,13 +89,18 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
     );
   }
 
-  const recent = (rawTrades ?? [])
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.trade.entry_date).getTime() - new Date(a.trade.entry_date).getTime(),
-    )
-    .slice(0, 5);
+  const recent = useMemo(
+    () =>
+      (rawTrades ?? [])
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.trade.entry_date).getTime() -
+            new Date(a.trade.entry_date).getTime(),
+        )
+        .slice(0, 5),
+    [rawTrades],
+  );
 
   return (
     <div className="space-y-8 md:space-y-10">
