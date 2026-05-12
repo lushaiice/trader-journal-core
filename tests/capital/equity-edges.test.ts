@@ -70,8 +70,8 @@ describe("capital edge cases", () => {
     ];
     const ledger = buildCapitalLedger(flows);
     for (let i = 1; i < ledger.length; i++) {
-      expect(new Date(ledger[i].eventDate).getTime()).toBeGreaterThanOrEqual(
-        new Date(ledger[i - 1].eventDate).getTime(),
+      expect(ledger[i].date.getTime()).toBeGreaterThanOrEqual(
+        ledger[i - 1].date.getTime(),
       );
     }
   });
