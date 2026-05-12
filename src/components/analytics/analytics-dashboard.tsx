@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -59,15 +59,22 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
   const { summary, equityCurve, drawdownSeries, drawdown, emotional, discipline, tags, filteredTrades } =
     analytics;
 
-  const adjustedCurve = buildCapitalAdjustedEquityCurve(
-    equityCurve.map((p) => ({
-      date: p.date,
-      netPnl: p.dailyPnl,
-      tradesClosed: p.tradesClosed,
-    })),
-    capital.events,
+  const adjustedCurve = useMemo(
+    () =>
+      buildCapitalAdjustedEquityCurve(
+        equityCurve.map((p) => ({
+          date: p.date,
+          netPnl: p.dailyPnl,
+          tradesClosed: p.tradesClosed,
+        })),
+        capital.events,
+      ),
+    [equityCurve, capital.events],
   );
-  const capitalReturn = computeCapitalAdjustedReturn(adjustedCurve);
+  const capitalReturn = useMemo(
+    () => computeCapitalAdjustedReturn(adjustedCurve),
+    [adjustedCurve],
+  );
 
   const hasAnyTrades = analytics.trades.length > 0;
   const hasRangeData = filteredTrades.length > 0;
@@ -82,13 +89,18 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
     );
   }
 
-  const recent = (rawTrades ?? [])
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.trade.entry_date).getTime() - new Date(a.trade.entry_date).getTime(),
-    )
-    .slice(0, 5);
+  const recent = useMemo(
+    () =>
+      (rawTrades ?? [])
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.trade.entry_date).getTime() -
+            new Date(a.trade.entry_date).getTime(),
+        )
+        .slice(0, 5),
+    [rawTrades],
+  );
 
   return (
     <div className="space-y-8 md:space-y-10">
