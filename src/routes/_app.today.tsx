@@ -40,7 +40,14 @@ export const Route = createFileRoute("/_app/today")({
       { name: "description", content: "Your daily trading workspace and behavioral mirror." },
     ],
   }),
-  component: TodayPage,
+  component: () => (
+    <SectionErrorBoundary
+      title="Today's workspace is temporarily unavailable."
+      description="Your drafts are still safe locally. Try again in a moment."
+    >
+      <TodayPage />
+    </SectionErrorBoundary>
+  ),
 });
 
 function TodayPage() {
