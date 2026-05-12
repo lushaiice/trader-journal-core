@@ -20,7 +20,14 @@ export const Route = createFileRoute("/_app/weekly-review")({
       },
     ],
   }),
-  component: WeeklyReviewPage,
+  component: () => (
+    <SectionErrorBoundary
+      title="Weekly review is temporarily unavailable."
+      description="Your weekly notes are safe. Try again in a moment."
+    >
+      <WeeklyReviewPage />
+    </SectionErrorBoundary>
+  ),
 });
 
 function WeeklyReviewPage() {
