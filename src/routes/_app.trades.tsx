@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { History, PlusCircle, Search, Loader2 } from "lucide-react";
 import { isAfter, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,14 @@ import { useTradesQuery } from "@/lib/trades/api";
 import { netPnl } from "@/lib/trades/calculations";
 
 export const Route = createFileRoute("/_app/trades")({
-  component: Trades,
+  component: () => (
+    <SectionErrorBoundary
+      title="Trade history is temporarily unavailable."
+      description="Your trades are safely stored. Try again in a moment."
+    >
+      <Trades />
+    </SectionErrorBoundary>
+  ),
 });
 
 type AssetFilter = "all" | "equity" | "futures" | "options";
