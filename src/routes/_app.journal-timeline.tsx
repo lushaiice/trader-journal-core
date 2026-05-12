@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Search, NotebookPen } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
 import { JournalTimelineCard, type TimelineDay } from "@/components/workspace";
