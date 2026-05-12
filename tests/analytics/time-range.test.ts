@@ -61,7 +61,8 @@ describe("time-range filtering", () => {
     expect(r7.start!.getTime()).toBeLessThan(NOW.getTime());
     expect(inRange(new Date("2026-05-10T00:00:00Z"), r7)).toBe(true);
     expect(inRange(new Date("2026-04-01"), r7)).toBe(false);
-    expect(inRange(new Date("2026-04-01"), r1m)).toBe(true);
+    expect(inRange(new Date("2026-04-15"), r1m)).toBe(true);
+    expect(inRange(new Date("2026-03-01"), r1m)).toBe(false);
     expect(inRange(new Date("2025-06-01"), r1y)).toBe(true);
     expect(inRange(new Date("2024-01-01"), r1y)).toBe(false);
     expect(inRange(new Date("2024-01-01"), r3y)).toBe(true);
