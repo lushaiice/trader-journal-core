@@ -20,7 +20,14 @@ export const Route = createFileRoute("/_app/journal-timeline")({
       },
     ],
   }),
-  component: JournalTimelinePage,
+  component: () => (
+    <SectionErrorBoundary
+      title="The journal timeline is temporarily unavailable."
+      description="Your reflections are safely stored. Try again in a moment."
+    >
+      <JournalTimelinePage />
+    </SectionErrorBoundary>
+  ),
 });
 
 function JournalTimelinePage() {
