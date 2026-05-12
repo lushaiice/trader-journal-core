@@ -23,7 +23,6 @@ import { TradeCard } from "@/components/trades/trade-card";
 import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
 import { TimeRangeSelector } from "./time-range-selector";
 import { MetricCard } from "./metric-card";
-import { EquityCurveChart } from "./equity-curve-chart";
 import { DrawdownChart } from "./drawdown-chart";
 import { AnalyticsSection } from "./analytics-section";
 import { EmotionalInsightCard } from "./emotional-insight-card";
@@ -32,13 +31,24 @@ import { TagAnalyticsTable } from "./tag-analytics-table";
 import { AnalyticsEmptyState } from "./analytics-empty-state";
 import { DailyReflection } from "./daily-reflection";
 import { AnalyticsSkeleton } from "./analytics-skeleton";
+import {
+  CapitalAwareEquityChart,
+  FirstCapitalPrompt,
+} from "@/components/capital";
+import { useCapitalState } from "@/hooks/capital";
+import {
+  buildCapitalAdjustedEquityCurve,
+  computeCapitalAdjustedReturn,
+} from "@/lib/capital";
 
 interface Props {
   baseCapital?: number;
 }
 
-export function AnalyticsDashboard({ baseCapital = 0 }: Props) {
+export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
   const [range, setRange] = useState<TimeRangeKey>("1M");
+  const capital = useCapitalState();
+  const baseCapital = baseCapitalProp ?? capital.baseCapital;
   const analytics = usePortfolioAnalytics({ range, baseCapital });
   const { data: rawTrades } = useTradesQuery();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -47,6 +57,16 @@ export function AnalyticsDashboard({ baseCapital = 0 }: Props) {
 
   const { summary, equityCurve, drawdownSeries, drawdown, emotional, discipline, tags, filteredTrades } =
     analytics;
+
+  const adjustedCurve = buildCapitalAdjustedEquityCurve(
+    equityCurve.map((p) => ({
+      date: p.date,
+      netPnl: p.dailyPnl,
+      tradesClosed: p.tradesClosed,
+    })),
+    capital.events,
+  );
+  const capitalReturn = computeCapitalAdjustedReturn(adjustedCurve);
 
   const hasAnyTrades = analytics.trades.length > 0;
   const hasRangeData = filteredTrades.length > 0;
