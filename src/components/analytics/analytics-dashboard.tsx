@@ -59,15 +59,22 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
   const { summary, equityCurve, drawdownSeries, drawdown, emotional, discipline, tags, filteredTrades } =
     analytics;
 
-  const adjustedCurve = buildCapitalAdjustedEquityCurve(
-    equityCurve.map((p) => ({
-      date: p.date,
-      netPnl: p.dailyPnl,
-      tradesClosed: p.tradesClosed,
-    })),
-    capital.events,
+  const adjustedCurve = useMemo(
+    () =>
+      buildCapitalAdjustedEquityCurve(
+        equityCurve.map((p) => ({
+          date: p.date,
+          netPnl: p.dailyPnl,
+          tradesClosed: p.tradesClosed,
+        })),
+        capital.events,
+      ),
+    [equityCurve, capital.events],
   );
-  const capitalReturn = computeCapitalAdjustedReturn(adjustedCurve);
+  const capitalReturn = useMemo(
+    () => computeCapitalAdjustedReturn(adjustedCurve),
+    [adjustedCurve],
+  );
 
   const hasAnyTrades = analytics.trades.length > 0;
   const hasRangeData = filteredTrades.length > 0;
