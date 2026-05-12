@@ -308,6 +308,8 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
         </p>
       )}
 
+      <MethodologyNote items={DEFAULT_METHODOLOGY} />
+
       <TradeDetailModal tradeId={activeId} onClose={() => setActiveId(null)} />
     </div>
   );
