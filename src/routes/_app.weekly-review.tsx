@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { addDays, endOfWeek, format, startOfWeek, subWeeks } from "date-fns";
 import { ChevronLeft, ChevronRight, CalendarRange } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { Button } from "@/components/ui/button";
 import { WeeklyReviewCard, type WeeklySummary, TradingCalendar, type CalendarDay } from "@/components/workspace";
 import { EmptyState } from "@/components/empty-state";
