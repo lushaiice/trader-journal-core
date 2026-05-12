@@ -19,6 +19,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppJournalTimelineRouteImport } from './routes/_app.journal-timeline'
 import { Route as AppJournalRouteImport } from './routes/_app.journal'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppCapitalRouteImport } from './routes/_app.capital'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppAddTradeRouteImport } from './routes/_app.add-trade'
 
@@ -71,6 +72,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCapitalRoute = AppCapitalRouteImport.update({
+  id: '/capital',
+  path: '/capital',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/add-trade': typeof AppAddTradeRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
   '/journal': typeof AppJournalRoute
   '/journal-timeline': typeof AppJournalTimelineRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/add-trade': typeof AppAddTradeRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
   '/journal': typeof AppJournalRoute
   '/journal-timeline': typeof AppJournalTimelineRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/add-trade': typeof AppAddTradeRoute
   '/_app/analytics': typeof AppAnalyticsRoute
+  '/_app/capital': typeof AppCapitalRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/journal': typeof AppJournalRoute
   '/_app/journal-timeline': typeof AppJournalTimelineRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/add-trade'
     | '/analytics'
+    | '/capital'
     | '/dashboard'
     | '/journal'
     | '/journal-timeline'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/add-trade'
     | '/analytics'
+    | '/capital'
     | '/dashboard'
     | '/journal'
     | '/journal-timeline'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/add-trade'
     | '/_app/analytics'
+    | '/_app/capital'
     | '/_app/dashboard'
     | '/_app/journal'
     | '/_app/journal-timeline'
@@ -244,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/capital': {
+      id: '/_app/capital'
+      path: '/capital'
+      fullPath: '/capital'
+      preLoaderRoute: typeof AppCapitalRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/analytics': {
       id: '/_app/analytics'
       path: '/analytics'
@@ -264,6 +283,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAddTradeRoute: typeof AppAddTradeRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppCapitalRoute: typeof AppCapitalRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppJournalRoute: typeof AppJournalRoute
   AppJournalTimelineRoute: typeof AppJournalTimelineRoute
@@ -276,6 +296,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAddTradeRoute: AppAddTradeRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
+  AppCapitalRoute: AppCapitalRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppJournalRoute: AppJournalRoute,
   AppJournalTimelineRoute: AppJournalTimelineRoute,
@@ -295,3 +316,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
