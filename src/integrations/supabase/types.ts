@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      capital_events: {
+        Row: {
+          amount: number
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          event_date?: string
+          event_type: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       checklist_responses: {
         Row: {
           created_at: string

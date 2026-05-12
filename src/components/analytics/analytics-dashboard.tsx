@@ -23,7 +23,6 @@ import { TradeCard } from "@/components/trades/trade-card";
 import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
 import { TimeRangeSelector } from "./time-range-selector";
 import { MetricCard } from "./metric-card";
-import { EquityCurveChart } from "./equity-curve-chart";
 import { DrawdownChart } from "./drawdown-chart";
 import { AnalyticsSection } from "./analytics-section";
 import { EmotionalInsightCard } from "./emotional-insight-card";
@@ -32,13 +31,24 @@ import { TagAnalyticsTable } from "./tag-analytics-table";
 import { AnalyticsEmptyState } from "./analytics-empty-state";
 import { DailyReflection } from "./daily-reflection";
 import { AnalyticsSkeleton } from "./analytics-skeleton";
+import {
+  CapitalAwareEquityChart,
+  FirstCapitalPrompt,
+} from "@/components/capital";
+import { useCapitalState } from "@/hooks/capital";
+import {
+  buildCapitalAdjustedEquityCurve,
+  computeCapitalAdjustedReturn,
+} from "@/lib/capital";
 
 interface Props {
   baseCapital?: number;
 }
 
-export function AnalyticsDashboard({ baseCapital = 0 }: Props) {
+export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
   const [range, setRange] = useState<TimeRangeKey>("1M");
+  const capital = useCapitalState();
+  const baseCapital = baseCapitalProp ?? capital.baseCapital;
   const analytics = usePortfolioAnalytics({ range, baseCapital });
   const { data: rawTrades } = useTradesQuery();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -47,6 +57,16 @@ export function AnalyticsDashboard({ baseCapital = 0 }: Props) {
 
   const { summary, equityCurve, drawdownSeries, drawdown, emotional, discipline, tags, filteredTrades } =
     analytics;
+
+  const adjustedCurve = buildCapitalAdjustedEquityCurve(
+    equityCurve.map((p) => ({
+      date: p.date,
+      netPnl: p.dailyPnl,
+      tradesClosed: p.tradesClosed,
+    })),
+    capital.events,
+  );
+  const capitalReturn = computeCapitalAdjustedReturn(adjustedCurve);
 
   const hasAnyTrades = analytics.trades.length > 0;
   const hasRangeData = filteredTrades.length > 0;
@@ -71,6 +91,7 @@ export function AnalyticsDashboard({ baseCapital = 0 }: Props) {
 
   return (
     <div className="space-y-8 md:space-y-10">
+      <FirstCapitalPrompt />
       {/* Sticky filter bar (mobile-friendly) */}
       <div className="sticky top-0 z-10 -mx-4 md:-mx-8 px-4 md:px-8 py-2 bg-background/85 backdrop-blur border-b border-border/60">
         <div className="flex items-center justify-between gap-3">
@@ -150,6 +171,19 @@ export function AnalyticsDashboard({ baseCapital = 0 }: Props) {
             tooltip="Per-trade Sharpe ratio (return ÷ stdev)."
           />
           <MetricCard
+            label="Adjusted return"
+            value={formatPercent(capitalReturn.capitalAdjustedReturn)}
+            tone={
+              capitalReturn.capitalAdjustedReturn != null &&
+              capitalReturn.capitalAdjustedReturn >= 0
+                ? "positive"
+                : "negative"
+            }
+            icon={Wallet}
+            hint={baseCapital > 0 ? `Base ${formatINR(baseCapital)}` : "Set capital"}
+            tooltip="Net trading P&L ÷ average deployed capital. Excludes deposits and withdrawals."
+          />
+          <MetricCard
             label="Total trades"
             value={String(summary.tradeCount)}
             icon={Hash}
@@ -165,7 +199,7 @@ export function AnalyticsDashboard({ baseCapital = 0 }: Props) {
       >
         <div className="grid lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
-            <EquityCurveChart data={equityCurve} baseCapital={baseCapital} />
+            <CapitalAwareEquityChart data={adjustedCurve} />
           </div>
           <DrawdownChart data={drawdownSeries} />
         </div>

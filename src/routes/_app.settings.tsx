@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Wallet } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -110,6 +111,20 @@ function SettingsPage() {
               Detected from your device. Used for daily date boundaries.
             </p>
           </div>
+        </section>
+
+        <section className="surface-card p-6 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className="text-sm font-medium mb-1 flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-primary" /> Portfolio capital
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Track deposits, withdrawals, and your equity baseline.
+            </p>
+          </div>
+          <Button asChild size="sm" variant="secondary">
+            <Link to="/capital">Manage</Link>
+          </Button>
         </section>
 
         <section className="surface-card p-6">

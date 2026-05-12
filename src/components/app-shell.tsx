@@ -12,6 +12,7 @@ import {
   Sun,
   CalendarRange,
   Clock,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const NAV = [
   { to: "/journal", label: "Journal", icon: NotebookPen },
   { to: "/journal-timeline", label: "Timeline", icon: Clock },
   { to: "/weekly-review", label: "Weekly Review", icon: CalendarRange },
+  { to: "/capital", label: "Capital", icon: Wallet },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
