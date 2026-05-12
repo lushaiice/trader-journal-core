@@ -185,7 +185,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
       >
         <div className="grid lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
-            <EquityCurveChart data={equityCurve} baseCapital={baseCapital} />
+            <CapitalAwareEquityChart data={adjustedCurve} />
           </div>
           <DrawdownChart data={drawdownSeries} />
         </div>
