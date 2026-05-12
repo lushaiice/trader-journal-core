@@ -31,6 +31,7 @@ import { TagAnalyticsTable } from "./tag-analytics-table";
 import { AnalyticsEmptyState } from "./analytics-empty-state";
 import { DailyReflection } from "./daily-reflection";
 import { AnalyticsSkeleton } from "./analytics-skeleton";
+import { MethodologyNote, DEFAULT_METHODOLOGY } from "./methodology-note";
 import {
   CapitalAwareEquityChart,
   FirstCapitalPrompt,
