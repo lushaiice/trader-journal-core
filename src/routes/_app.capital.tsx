@@ -33,7 +33,14 @@ import {
 import type { CapitalEvent, CapitalEventInput } from "@/types/capital";
 
 export const Route = createFileRoute("/_app/capital")({
-  component: CapitalPage,
+  component: () => (
+    <SectionErrorBoundary
+      title="Capital tracking is temporarily unavailable."
+      description="Your existing capital records are safe. Try again in a moment."
+    >
+      <CapitalPage />
+    </SectionErrorBoundary>
+  ),
 });
 
 function CapitalPage() {
