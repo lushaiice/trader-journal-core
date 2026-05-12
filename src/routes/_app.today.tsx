@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { format, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import {
   ChecklistCard,
   ReflectionEditor,
@@ -39,7 +40,14 @@ export const Route = createFileRoute("/_app/today")({
       { name: "description", content: "Your daily trading workspace and behavioral mirror." },
     ],
   }),
-  component: TodayPage,
+  component: () => (
+    <SectionErrorBoundary
+      title="Today's workspace is temporarily unavailable."
+      description="Your drafts are still safe locally. Try again in a moment."
+    >
+      <TodayPage />
+    </SectionErrorBoundary>
+  ),
 });
 
 function TodayPage() {

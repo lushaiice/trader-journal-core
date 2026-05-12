@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { addDays, endOfWeek, format, startOfWeek, subWeeks } from "date-fns";
 import { ChevronLeft, ChevronRight, CalendarRange } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { Button } from "@/components/ui/button";
 import { WeeklyReviewCard, type WeeklySummary, TradingCalendar, type CalendarDay } from "@/components/workspace";
 import { EmptyState } from "@/components/empty-state";
@@ -19,7 +20,14 @@ export const Route = createFileRoute("/_app/weekly-review")({
       },
     ],
   }),
-  component: WeeklyReviewPage,
+  component: () => (
+    <SectionErrorBoundary
+      title="Weekly review is temporarily unavailable."
+      description="Your weekly notes are safe. Try again in a moment."
+    >
+      <WeeklyReviewPage />
+    </SectionErrorBoundary>
+  ),
 });
 
 function WeeklyReviewPage() {

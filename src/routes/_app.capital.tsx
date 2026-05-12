@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { PlusCircle } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -32,7 +33,14 @@ import {
 import type { CapitalEvent, CapitalEventInput } from "@/types/capital";
 
 export const Route = createFileRoute("/_app/capital")({
-  component: CapitalPage,
+  component: () => (
+    <SectionErrorBoundary
+      title="Capital tracking is temporarily unavailable."
+      description="Your existing capital records are safe. Try again in a moment."
+    >
+      <CapitalPage />
+    </SectionErrorBoundary>
+  ),
 });
 
 function CapitalPage() {
