@@ -104,21 +104,37 @@ function redact(value: unknown): unknown {
   return value;
 }
 
+export interface TrackOptions {
+  category?: ObservabilityCategory;
+  meta?: Record<string, unknown>;
+}
+
 export function track(
   level: ObservabilityLevel,
   scope: string,
   message: string,
-  meta?: Record<string, unknown>,
+  optsOrMeta?: TrackOptions | Record<string, unknown>,
 ) {
+  const opts: TrackOptions =
+    optsOrMeta && ("category" in optsOrMeta || "meta" in optsOrMeta)
+      ? (optsOrMeta as TrackOptions)
+      : { meta: optsOrMeta as Record<string, unknown> | undefined };
+
+  const env = currentEnv();
   const event: ObservabilityEvent = {
     level,
     scope,
+    category: opts.category ?? inferCategory(scope, message),
     message,
-    meta: meta ? (redact(meta) as Record<string, unknown>) : undefined,
+    meta: opts.meta ? (redact(opts.meta) as Record<string, unknown>) : undefined,
+    env,
     at: new Date().toISOString(),
   };
   ring.push(event);
   if (ring.length > RING_LIMIT) ring.shift();
+
+  // In production, only warn/error reach the console — keep it calm.
+  if (isProd(env) && level === "info") return;
 
   const payload = JSON.stringify(event);
   if (level === "error") console.error("[observability]", payload);
