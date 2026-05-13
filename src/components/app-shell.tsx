@@ -105,12 +105,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Button>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main
+          className="flex-1 overflow-y-auto md:pb-0"
+          style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+        >
           <div className="mx-auto w-full max-w-6xl px-4 md:px-8 py-6 md:py-10">{children}</div>
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-50">
+        <nav
+          className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-50"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
           <ul className="grid grid-cols-5">
             {MOBILE_NAV.map((item) => {
               const active = path === item.to;
