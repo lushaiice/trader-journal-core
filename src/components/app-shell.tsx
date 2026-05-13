@@ -93,7 +93,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
-        <header className="md:hidden h-14 px-4 flex items-center justify-between border-b">
+        <header
+          className="md:hidden h-14 px-4 flex items-center justify-between border-b"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-md bg-primary/15 flex items-center justify-center">
               <TrendingUp className="h-4 w-4 text-primary" />
@@ -105,12 +108,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Button>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main
+          className="flex-1 overflow-y-auto md:pb-0"
+          style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+        >
           <div className="mx-auto w-full max-w-6xl px-4 md:px-8 py-6 md:py-10">{children}</div>
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-50">
+        <nav
+          className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-50"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
           <ul className="grid grid-cols-5">
             {MOBILE_NAV.map((item) => {
               const active = path === item.to;

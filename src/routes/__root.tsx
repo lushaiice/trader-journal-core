@@ -8,9 +8,11 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
+import { installGlobalErrorHandlers, observability } from "@/lib/observability";
 
 function NotFoundComponent() {
   return (
@@ -35,7 +37,7 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  observability.error("route", error.message ?? "Unknown route error");
   const router = useRouter();
 
   return (
@@ -125,6 +127,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    installGlobalErrorHandlers();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
