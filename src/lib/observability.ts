@@ -13,12 +13,58 @@
 
 export type ObservabilityLevel = "info" | "warn" | "error";
 
+/**
+ * Coarse categories for grouping errors in logs and dashboards.
+ * Keep this list short and stable — categorization is for triage,
+ * not for fine-grained product analytics.
+ */
+export type ObservabilityCategory =
+  | "auth"
+  | "network"
+  | "analytics"
+  | "storage"
+  | "validation"
+  | "render"
+  | "unknown";
+
 export interface ObservabilityEvent {
   level: ObservabilityLevel;
   scope: string;
+  category: ObservabilityCategory;
   message: string;
   meta?: Record<string, unknown>;
+  env: string;
   at: string;
+}
+
+function currentEnv(): string {
+  try {
+    // Vite client
+    const v = (import.meta as { env?: Record<string, string> }).env;
+    if (v?.VITE_APP_ENV) return v.VITE_APP_ENV;
+    if (v?.MODE) return v.MODE;
+  } catch {
+    /* ignore */
+  }
+  if (typeof process !== "undefined" && process.env?.NODE_ENV) {
+    return process.env.NODE_ENV;
+  }
+  return "unknown";
+}
+
+function isProd(env: string): boolean {
+  return env === "production" || env === "prod";
+}
+
+function inferCategory(scope: string, message: string): ObservabilityCategory {
+  const s = `${scope} ${message}`.toLowerCase();
+  if (/auth|login|session|token|signin|signup/.test(s)) return "auth";
+  if (/network|fetch|http|timeout|offline|cors/.test(s)) return "network";
+  if (/storage|upload|bucket|file/.test(s)) return "storage";
+  if (/validation|schema|zod|invalid|parse/.test(s)) return "validation";
+  if (/analytics|metric|chart|equity|drawdown/.test(s)) return "analytics";
+  if (/render|component|react|hydrate|route/.test(s)) return "render";
+  return "unknown";
 }
 
 const RING_LIMIT = 50;
