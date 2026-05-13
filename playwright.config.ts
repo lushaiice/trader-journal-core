@@ -1,14 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Playwright configuration for end-to-end workflow tests.
+ * Playwright configuration for Trader OS end-to-end workflows.
  *
- * Run locally:
- *   bun add -d @playwright/test && bunx playwright install chromium
- *   bunx playwright test
- *
- * Specs live in /e2e and exercise full user flows (trade, capital,
- * reflection, behavior, onboarding) against a running dev server.
+ * Local:  bunx playwright test
+ * CI:     E2E_EMAIL / E2E_PASSWORD set as repo secrets; web server starts
+ *         automatically via the `webServer` block.
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -16,20 +13,24 @@ export default defineConfig({
   expect: { timeout: 5_000 },
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
-  reporter: "list",
+  workers: process.env.CI ? 2 : undefined,
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:5173",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    video: "retain-on-failure",
   },
   projects: [
-    {
-      name: "desktop-chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "mobile-safari",
-      use: { ...devices["iPhone 13"] },
-    },
+    { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile-safari", use: { ...devices["iPhone 13"] } },
   ],
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: "bun run dev",
+        url: "http://localhost:5173",
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });
