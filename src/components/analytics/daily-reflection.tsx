@@ -53,7 +53,7 @@ export function DailyReflection({ trades, disciplineToday }: Props) {
       )}
 
       <Button asChild size="sm" variant="secondary" className="w-full">
-        <Link to="/journal">
+        <Link to="/today">
           <NotebookPen className="h-3.5 w-3.5 mr-2" /> Open journal
         </Link>
       </Button>

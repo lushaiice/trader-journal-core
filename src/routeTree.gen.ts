@@ -17,7 +17,6 @@ import { Route as AppTradesRouteImport } from './routes/_app.trades'
 import { Route as AppTodayRouteImport } from './routes/_app.today'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppJournalTimelineRouteImport } from './routes/_app.journal-timeline'
-import { Route as AppJournalRouteImport } from './routes/_app.journal'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCapitalRouteImport } from './routes/_app.capital'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
@@ -62,11 +61,6 @@ const AppJournalTimelineRoute = AppJournalTimelineRouteImport.update({
   path: '/journal-timeline',
   getParentRoute: () => AppRoute,
 } as any)
-const AppJournalRoute = AppJournalRouteImport.update({
-  id: '/journal',
-  path: '/journal',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -95,7 +89,6 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
-  '/journal': typeof AppJournalRoute
   '/journal-timeline': typeof AppJournalTimelineRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
@@ -109,7 +102,6 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
-  '/journal': typeof AppJournalRoute
   '/journal-timeline': typeof AppJournalTimelineRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
@@ -125,7 +117,6 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/capital': typeof AppCapitalRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/journal': typeof AppJournalRoute
   '/_app/journal-timeline': typeof AppJournalTimelineRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/today': typeof AppTodayRoute
@@ -141,7 +132,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/capital'
     | '/dashboard'
-    | '/journal'
     | '/journal-timeline'
     | '/settings'
     | '/today'
@@ -155,7 +145,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/capital'
     | '/dashboard'
-    | '/journal'
     | '/journal-timeline'
     | '/settings'
     | '/today'
@@ -170,7 +159,6 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/capital'
     | '/_app/dashboard'
-    | '/_app/journal'
     | '/_app/journal-timeline'
     | '/_app/settings'
     | '/_app/today'
@@ -242,13 +230,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJournalTimelineRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/journal': {
-      id: '/_app/journal'
-      path: '/journal'
-      fullPath: '/journal'
-      preLoaderRoute: typeof AppJournalRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -285,7 +266,6 @@ interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCapitalRoute: typeof AppCapitalRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppJournalRoute: typeof AppJournalRoute
   AppJournalTimelineRoute: typeof AppJournalTimelineRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTodayRoute: typeof AppTodayRoute
@@ -298,7 +278,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCapitalRoute: AppCapitalRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppJournalRoute: AppJournalRoute,
   AppJournalTimelineRoute: AppJournalTimelineRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTodayRoute: AppTodayRoute,
