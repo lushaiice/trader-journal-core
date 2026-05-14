@@ -5,7 +5,7 @@ import {
   PlusCircle,
   History,
   BarChart3,
-  NotebookPen,
+  
   Settings,
   LogOut,
   TrendingUp,
@@ -24,7 +24,7 @@ const NAV = [
   { to: "/add-trade", label: "Add Trade", icon: PlusCircle },
   { to: "/trades", label: "Trades", icon: History },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/journal", label: "Journal", icon: NotebookPen },
+  
   { to: "/journal-timeline", label: "Timeline", icon: Clock },
   { to: "/weekly-review", label: "Weekly Review", icon: CalendarRange },
   { to: "/capital", label: "Capital", icon: Wallet },
