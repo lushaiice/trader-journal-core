@@ -155,3 +155,42 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
+function FloatingFeedbackButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <div
+        className="fixed right-6 z-50 md:hidden"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
+      >
+        <FeedbackTriggerButton onClick={() => setOpen(true)} />
+      </div>
+      <div className="hidden md:block fixed bottom-6 right-6 z-50">
+        <FeedbackTriggerButton onClick={() => setOpen(true)} />
+      </div>
+      <FeedbackDialog open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
+function FeedbackTriggerButton({ onClick }: { onClick: () => void }) {
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label="Send feedback"
+            onClick={onClick}
+            className="rounded-full h-10 w-10 shadow-md"
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left">Send feedback</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
