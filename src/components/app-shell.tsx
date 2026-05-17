@@ -13,9 +13,17 @@ import {
   CalendarRange,
   Clock,
   Wallet,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { cn } from "@/lib/utils";
 
 const NAV = [
