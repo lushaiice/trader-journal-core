@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Wallet } from "lucide-react";
+import { MessageSquare, Wallet } from "lucide-react";
+import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -132,6 +133,23 @@ function SettingsPage() {
           <p className="text-xs text-muted-foreground">
             Define the rules you want to track each day.
           </p>
+        </section>
+
+        <section className="surface-card p-6 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className="text-sm font-medium mb-1">Feedback</h3>
+            <p className="text-xs text-muted-foreground">
+              Help us improve Trader OS during the beta.
+            </p>
+          </div>
+          <FeedbackDialog
+            trigger={
+              <Button variant="outline" size="sm">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Send feedback
+              </Button>
+            }
+          />
         </section>
       </div>
     </>
