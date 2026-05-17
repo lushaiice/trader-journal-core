@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Wallet } from "lucide-react";
+import { MessageSquare, Wallet } from "lucide-react";
+import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
