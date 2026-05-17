@@ -36,11 +36,23 @@ import {
 import { submitFeedback } from "@/services/feedback";
 
 interface FeedbackDialogProps {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function FeedbackDialog({ trigger }: FeedbackDialogProps) {
-  const [open, setOpen] = useState(false);
+export function FeedbackDialog({
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+}: FeedbackDialogProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
