@@ -205,6 +205,33 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          message: string
+          route_at_time: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          message: string
+          route_at_time?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          route_at_time?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolios: {
         Row: {
           base_capital: number | null
