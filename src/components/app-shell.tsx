@@ -149,6 +149,58 @@ export function AppShell({ children }: { children: ReactNode }) {
             })}
           </ul>
         </nav>
+
+        {/* Floating feedback button */}
+        <div
+          className="fixed right-6 z-50"
+          style={{
+            bottom:
+              "calc(env(safe-area-inset-bottom) + 5rem)",
+          }}
+        >
+          <div className="md:hidden">
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <FeedbackDialog
+                    trigger={
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        aria-label="Send feedback"
+                        className="rounded-full h-10 w-10 shadow-md"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="left">Send feedback</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+        <div className="hidden md:block fixed bottom-6 right-6 z-50">
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <FeedbackDialog
+                  trigger={
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      aria-label="Send feedback"
+                      className="rounded-full h-10 w-10 shadow-md"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </TooltipTrigger>
+              <TooltipContent side="left">Send feedback</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
     </div>
   );
