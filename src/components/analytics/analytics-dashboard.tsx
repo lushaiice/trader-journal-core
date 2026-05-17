@@ -54,15 +54,13 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
   const { data: rawTrades } = useTradesQuery();
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  if (analytics.isLoading) return <AnalyticsSkeleton />;
-
   const { summary, equityCurve, drawdownSeries, drawdown, emotional, discipline, tags, filteredTrades } =
     analytics;
 
   const adjustedCurve = useMemo(
     () =>
       buildCapitalAdjustedEquityCurve(
-        equityCurve.map((p) => ({
+        (equityCurve ?? []).map((p) => ({
           date: p.date,
           netPnl: p.dailyPnl,
           tradesClosed: p.tradesClosed,
@@ -76,19 +74,6 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
     [adjustedCurve],
   );
 
-  const hasAnyTrades = analytics.trades.length > 0;
-  const hasRangeData = filteredTrades.length > 0;
-
-  if (!hasAnyTrades) {
-    return (
-      <AnalyticsEmptyState
-        icon={BarChart3}
-        title="Your analytics begin with your first trade"
-        description="Once you log a trade, performance, behavior, and discipline insights will appear here — calmly and clearly."
-      />
-    );
-  }
-
   const recent = useMemo(
     () =>
       (rawTrades ?? [])
@@ -101,6 +86,21 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
         .slice(0, 5),
     [rawTrades],
   );
+
+  if (analytics.isLoading) return <AnalyticsSkeleton />;
+
+  const hasAnyTrades = analytics.trades.length > 0;
+  const hasRangeData = filteredTrades.length > 0;
+
+  if (!hasAnyTrades) {
+    return (
+      <AnalyticsEmptyState
+        icon={BarChart3}
+        title="Your analytics begin with your first trade"
+        description="Once you log a trade, performance, behavior, and discipline insights will appear here — calmly and clearly."
+      />
+    );
+  }
 
   return (
     <div className="space-y-8 md:space-y-10">
