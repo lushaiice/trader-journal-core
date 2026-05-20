@@ -11,7 +11,10 @@
  *   - Safe. Redact anything that looks like a number/amount before logging.
  */
 
+import { sentryCapture } from "@/lib/sentry";
+
 export type ObservabilityLevel = "info" | "warn" | "error";
+
 
 /**
  * Coarse categories for grouping errors in logs and dashboards.
@@ -167,6 +170,7 @@ export function installGlobalErrorHandlers() {
       line: event.lineno,
       col: event.colno,
     });
+    sentryCapture(event.error ?? new Error(event.message), { scope: "window" });
   });
 
   window.addEventListener("unhandledrejection", (event) => {
@@ -174,5 +178,6 @@ export function installGlobalErrorHandlers() {
     const message =
       reason instanceof Error ? reason.message : String(reason ?? "unknown");
     observability.error("promise", message);
+    sentryCapture(reason, { scope: "promise" });
   });
 }
