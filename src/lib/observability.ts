@@ -13,6 +13,8 @@
 
 export type ObservabilityLevel = "info" | "warn" | "error";
 
+import { sentryCapture } from "@/lib/sentry";
+
 /**
  * Coarse categories for grouping errors in logs and dashboards.
  * Keep this list short and stable — categorization is for triage,
