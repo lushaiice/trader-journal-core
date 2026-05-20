@@ -74,7 +74,49 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
+      captureSsrError(error);
       return brandedErrorResponse();
     }
   },
 };
+
+function captureSsrError(error: unknown): void {
+  const dsn = (globalThis as Record<string, unknown>)["VITE_SENTRY_DSN"] as string | undefined
+    ?? (typeof process !== "undefined" ? process.env.VITE_SENTRY_DSN : undefined);
+  if (!dsn) return;
+
+  try {
+    const url = new URL(dsn);
+    const projectId = url.pathname.replace(/^\//, "");
+    const endpoint = `${url.protocol}//${url.host}/api/${projectId}/envelope/`;
+
+    const message = error instanceof Error ? error.message : String(error ?? "SSR error");
+    const stack = error instanceof Error ? (error.stack ?? "") : "";
+
+    const envelope = [
+      JSON.stringify({ event_id: crypto.randomUUID(), sent_at: new Date().toISOString() }),
+      JSON.stringify({ type: "event" }),
+      JSON.stringify({
+        event_id: crypto.randomUUID(),
+        level: "error",
+        platform: "javascript",
+        environment: "production",
+        exception: {
+          values: [{ type: "Error", value: message, stacktrace: { frames: stack ? [{ filename: "server.ts", function: "fetch", abs_path: stack }] : [] } }],
+        },
+      }),
+    ].join("\n");
+
+    fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-sentry-envelope",
+        "X-Sentry-Auth": `Sentry sentry_key=${url.username}, sentry_version=7`,
+      },
+      body: envelope,
+    }).catch(() => {/* swallow — never let telemetry break the response path */});
+  } catch {
+    // Never let Sentry reporting break the response.
+  }
+}
+
