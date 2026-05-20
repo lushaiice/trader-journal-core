@@ -11,9 +11,10 @@
  *   - Safe. Redact anything that looks like a number/amount before logging.
  */
 
+import { sentryCapture } from "@/lib/sentry";
+
 export type ObservabilityLevel = "info" | "warn" | "error";
 
-import { sentryCapture } from "@/lib/sentry";
 
 /**
  * Coarse categories for grouping errors in logs and dashboards.
