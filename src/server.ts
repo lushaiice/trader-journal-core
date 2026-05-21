@@ -2,6 +2,9 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { validateEnv } from "./lib/env-check";
+
+validateEnv();
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -68,6 +71,26 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const url = new URL(request.url);
+    if (url.pathname === "/health") {
+      const check = validateEnv();
+      return new Response(
+        JSON.stringify({
+          status: check.ok ? "ok" : "degraded",
+          env: check.env,
+          supabase: check.missing.some((k) => k.startsWith("VITE_SUPABASE"))
+            ? "missing"
+            : "configured",
+          sentry: check.sentry,
+          ts: new Date().toISOString(),
+        }),
+        {
+          status: check.ok ? 200 : 503,
+          headers: { "content-type": "application/json; charset=utf-8" },
+        },
+      );
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
