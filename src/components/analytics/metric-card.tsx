@@ -36,6 +36,7 @@ export function MetricCard({
   tooltip,
   icon: Icon,
   className,
+  valueTestId,
 }: Props) {
   return (
     <div className={cn("surface-card p-4 md:p-5 flex flex-col gap-2", className)}>
