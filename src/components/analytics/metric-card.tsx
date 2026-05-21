@@ -18,6 +18,7 @@ interface Props {
   tooltip?: string;
   icon?: LucideIcon;
   className?: string;
+  valueTestId?: string;
 }
 
 const TONE: Record<MetricTone, string> = {
