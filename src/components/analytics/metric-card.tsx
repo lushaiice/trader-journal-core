@@ -18,6 +18,7 @@ interface Props {
   tooltip?: string;
   icon?: LucideIcon;
   className?: string;
+  valueTestId?: string;
 }
 
 const TONE: Record<MetricTone, string> = {
@@ -35,6 +36,7 @@ export function MetricCard({
   tooltip,
   icon: Icon,
   className,
+  valueTestId,
 }: Props) {
   return (
     <div className={cn("surface-card p-4 md:p-5 flex flex-col gap-2", className)}>
@@ -60,7 +62,10 @@ export function MetricCard({
           </TooltipProvider>
         )}
       </div>
-      <p className={cn("text-xl md:text-2xl font-semibold tabular-nums tracking-tight", TONE[tone])}>
+      <p
+        data-testid={valueTestId}
+        className={cn("text-xl md:text-2xl font-semibold tabular-nums tracking-tight", TONE[tone])}
+      >
         {value}
       </p>
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}

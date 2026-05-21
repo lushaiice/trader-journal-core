@@ -128,6 +128,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
             icon={Wallet}
             hint={`${summary.closedCount} closed`}
             tooltip="Total realized P&L net of fees within range."
+            valueTestId="metric-net-pnl"
           />
           <MetricCard
             label="Win rate"
