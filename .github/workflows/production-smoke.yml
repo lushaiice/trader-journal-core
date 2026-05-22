@@ -1,0 +1,54 @@
+name: Production Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Production URL to smoke test"
+        required: false
+        default: "https://tradersos.lovable.app"
+  schedule:
+    # Runs every Monday at 06:00 UTC — low-noise weekly health check
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Smoke — ${{ github.event.inputs.target_url || 'https://tradersos.lovable.app' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun install
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+
+      - name: Install Playwright (Chromium only)
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run smoke spec against production
+        run: bunx playwright test e2e/smoke.spec.ts --project=desktop-chromium
+        env:
+          CI: "true"
+          E2E_BASE_URL: ${{ github.event.inputs.target_url || 'https://tradersos.lovable.app' }}
+
+      - name: Upload smoke report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report-${{ github.run_id }}
+          path: playwright-report
+          retention-days: 7

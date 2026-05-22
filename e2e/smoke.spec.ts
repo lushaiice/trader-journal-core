@@ -17,3 +17,8 @@ test("unknown route shows calm 404, not a crash", async ({ page }) => {
   await expect(page.getByText("404")).toBeVisible();
   await expect(page.getByRole("link", { name: /go home/i })).toBeVisible();
 });
+
+test("login page serves the correct document title", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page).toHaveTitle("Trader OS — Calm trading journal & analytics");
+});
