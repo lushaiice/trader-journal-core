@@ -1,12 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/**
- * Playwright configuration for Trader OS end-to-end workflows.
- *
- * Local:  bunx playwright test
- * CI:     E2E_EMAIL / SUPABASE_SERVICE_ROLE_KEY set as repo secrets; web
- *         server starts automatically via the `webServer` block.
- */
 export default defineConfig({
   testDir: "./e2e",
   globalSetup: "./e2e/global.setup.ts",
@@ -27,14 +20,14 @@ export default defineConfig({
       name: "desktop-chromium",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/user.json",
+        storageState: process.env.CI ? undefined : "playwright/.auth/user.json",
       },
     },
     {
       name: "mobile-safari",
       use: {
         ...devices["iPhone 13"],
-        storageState: "playwright/.auth/user.json",
+        storageState: process.env.CI ? undefined : "playwright/.auth/user.json",
       },
     },
   ],
