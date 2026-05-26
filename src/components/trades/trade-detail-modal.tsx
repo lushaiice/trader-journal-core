@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { TradeForm } from "./trade-form";
 import { PostTradeReview } from "./post-trade-review";
 import { useTradeQuery, useDeleteTrade, type TradeWithRelations } from "@/lib/trades/api";
+import { useScreenshotUrl } from "@/hooks/trades/use-screenshot-url";
 import { EMOTIONAL_QUESTIONS } from "@/lib/trades/constants";
 import {
   disciplineScore,
@@ -251,16 +252,7 @@ function DetailView({
         </>
       )}
 
-      {trade.screenshot_url && (
-        <>
-          <SectionLabel>Chart Screenshot</SectionLabel>
-          <img
-            src={trade.screenshot_url}
-            alt="Chart"
-            className="rounded-lg border border-border w-full max-h-96 object-contain bg-black/40"
-          />
-        </>
-      )}
+      {trade.screenshot_url && <ScreenshotPreview stored={trade.screenshot_url} />}
 
       {trade.notes && (
         <>
@@ -348,5 +340,20 @@ function ExitsList({ exits }: { exits: ExitRow[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+function ScreenshotPreview({ stored }: { stored: string }) {
+  const url = useScreenshotUrl(stored);
+  if (!url) return null;
+  return (
+    <>
+      <SectionLabel>Chart Screenshot</SectionLabel>
+      <img
+        src={url}
+        alt="Chart"
+        className="rounded-lg border border-border w-full max-h-96 object-contain bg-black/40"
+      />
+    </>
   );
 }

@@ -183,14 +183,34 @@ export async function uploadScreenshot(file: File, userId: string): Promise<stri
     upsert: false,
   });
   if (error) throw error;
-  const { data } = supabase.storage.from(SCREENSHOT_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  // Bucket is private — store the storage path; reads use short-lived signed URLs.
+  return path;
 }
 
-export async function removeScreenshot(publicUrl: string) {
+/** Extract the in-bucket object path from either a stored path or a legacy public/signed URL. */
+export function getScreenshotPath(stored: string): string {
   const marker = `/${SCREENSHOT_BUCKET}/`;
-  const idx = publicUrl.indexOf(marker);
-  if (idx === -1) return;
-  const path = publicUrl.slice(idx + marker.length);
+  const idx = stored.indexOf(marker);
+  if (idx === -1) return stored.replace(/^\/+/, "");
+  return stored.slice(idx + marker.length).split("?")[0];
+}
+
+/** Create a short-lived signed URL for a stored screenshot reference. */
+export async function getScreenshotSignedUrl(
+  stored: string,
+  expiresInSeconds = 3600,
+): Promise<string | null> {
+  const path = getScreenshotPath(stored);
+  if (!path) return null;
+  const { data, error } = await supabase.storage
+    .from(SCREENSHOT_BUCKET)
+    .createSignedUrl(path, expiresInSeconds);
+  if (error) return null;
+  return data.signedUrl;
+}
+
+export async function removeScreenshot(stored: string) {
+  const path = getScreenshotPath(stored);
+  if (!path) return;
   await supabase.storage.from(SCREENSHOT_BUCKET).remove([path]);
 }

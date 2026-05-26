@@ -49,7 +49,7 @@ export const tradeFormSchema = z
 
     tags: z.array(z.string().min(1).max(40)).default([]),
     notes: z.string().max(4000).optional().or(z.literal("")),
-    screenshot_url: z.string().url().optional().nullable(),
+    screenshot_url: z.string().min(1).max(1024).optional().nullable(),
 
     discipline: z.array(disciplineSchema).default([]),
   })
