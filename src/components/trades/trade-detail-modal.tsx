@@ -251,16 +251,7 @@ function DetailView({
         </>
       )}
 
-      {trade.screenshot_url && (
-        <>
-          <SectionLabel>Chart Screenshot</SectionLabel>
-          <img
-            src={trade.screenshot_url}
-            alt="Chart"
-            className="rounded-lg border border-border w-full max-h-96 object-contain bg-black/40"
-          />
-        </>
-      )}
+      {trade.screenshot_url && <ScreenshotPreview stored={trade.screenshot_url} />}
 
       {trade.notes && (
         <>
