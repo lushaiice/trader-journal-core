@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { uploadScreenshot, removeScreenshot } from "@/lib/trades/api";
+import { useScreenshotUrl } from "@/hooks/trades/use-screenshot-url";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/trades/constants";
 import type { TradeFormValues } from "@/lib/trades/schema";
 
 export function ScreenshotField() {
   const { setValue, watch } = useFormContext<TradeFormValues>();
-  const url = watch("screenshot_url") as string | null | undefined;
+  const stored = watch("screenshot_url") as string | null | undefined;
+  const url = useScreenshotUrl(stored);
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [drag, setDrag] = useState(false);
