@@ -48,11 +48,11 @@ export function ScreenshotField() {
   };
 
   const clear = async () => {
-    if (url) await removeScreenshot(url).catch(() => null);
+    if (stored) await removeScreenshot(stored).catch(() => null);
     setValue("screenshot_url", null, { shouldDirty: true });
   };
 
-  if (url) {
+  if (stored) {
     return (
       <div className="relative rounded-lg overflow-hidden border border-border group">
         <img src={url} alt="Trade screenshot" className="w-full max-h-80 object-contain bg-black/40" />
