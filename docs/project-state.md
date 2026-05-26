@@ -1,4 +1,4 @@
-# Trader OS — Project State & Strategic Direction
+# Traders' OS — Project State & Strategic Direction
 
 _Last Updated: May 2026_
 
@@ -8,7 +8,7 @@ _Last Updated: May 2026_
 
 ## Product Name
 
-**Trader OS**
+**Traders' OS**
 
 ## Product Category
 
@@ -16,7 +16,7 @@ Behavioral trading journal and trader operating system.
 
 ## Core Philosophy
 
-Trader OS is designed to help retail traders:
+Traders' OS is designed to help retail traders:
 
 - improve process quality
 
@@ -28,7 +28,7 @@ Trader OS is designed to help retail traders:
 
 - reduce impulsive decision-making
 
-Trader OS is intentionally NOT:
+Traders' OS is intentionally NOT:
 
 - a signal platform
 
@@ -380,7 +380,7 @@ Known gap before first invite:
 
 Current philosophy:
 
-Trader OS should become:
+Traders' OS should become:
 
 - a thinking environment
 
@@ -620,7 +620,7 @@ This is currently the strongest moat.
 
 ## 6.2 Calm UX Direction
 
-Trader OS avoids:
+Traders' OS avoids:
 
 - dopamine mechanics
 
@@ -640,7 +640,7 @@ Most trading journals focus only on:
 
 - statistics
 
-Trader OS also focuses on:
+Traders' OS also focuses on:
 
 - cognition
 
@@ -794,7 +794,7 @@ The structured layer (retention, friction, onboarding telemetry) becomes the nex
 
 # 8. Current Strategic Position
 
-Trader OS is no longer:
+Traders' OS is no longer:
 
 - idea stage
 
@@ -802,7 +802,7 @@ Trader OS is no longer:
 
 - feature discovery
 
-Trader OS is now:
+Traders' OS is now:
 
 # a behavioral trading platform approaching closed beta.
 
@@ -992,7 +992,7 @@ Possible future:
 
 Important:
 
-Avoid turning Trader OS into a broker terminal.
+Avoid turning Traders' OS into a broker terminal.
 
 ---
 
@@ -1052,7 +1052,7 @@ Still avoid:
 
 # 12. Long-Term Strategic Vision
 
-Trader OS should evolve into:
+Traders' OS should evolve into:
 
 # the operating system for disciplined retail traders.
 
@@ -1082,7 +1082,7 @@ The biggest long-term risk is:
 
 # losing philosophical clarity.
 
-Trader OS becomes weak if it turns into:
+Traders' OS becomes weak if it turns into:
 
 - another broker dashboard
 

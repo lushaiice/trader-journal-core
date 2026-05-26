@@ -20,5 +20,5 @@ test("unknown route shows calm 404, not a crash", async ({ page }) => {
 
 test("login page serves the correct document title", async ({ page }) => {
   await page.goto("/login");
-  await expect(page).toHaveTitle("Trader OS — Calm trading journal & analytics");
+  await expect(page).toHaveTitle("Traders' OS — Calm trading journal & analytics");
 });

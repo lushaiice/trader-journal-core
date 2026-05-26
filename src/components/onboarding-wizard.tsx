@@ -19,7 +19,7 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Welcome to Trader OS",
+    title: "Welcome to Traders' OS",
     body:
       "A behavioral operating system for traders. The work here is reflection, discipline, and emotional awareness — not predictions or motivation.",
   },

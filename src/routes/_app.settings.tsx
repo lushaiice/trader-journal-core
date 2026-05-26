@@ -139,7 +139,7 @@ function SettingsPage() {
           <div className="min-w-0">
             <h3 className="text-sm font-medium mb-1">Feedback</h3>
             <p className="text-xs text-muted-foreground">
-              Help us improve Trader OS during the beta.
+              Help us improve Traders' OS during the beta.
             </p>
           </div>
           <FeedbackDialog
