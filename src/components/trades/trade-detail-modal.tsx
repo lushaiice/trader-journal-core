@@ -342,3 +342,18 @@ function ExitsList({ exits }: { exits: ExitRow[] }) {
     </ul>
   );
 }
+
+function ScreenshotPreview({ stored }: { stored: string }) {
+  const url = useScreenshotUrl(stored);
+  if (!url) return null;
+  return (
+    <>
+      <SectionLabel>Chart Screenshot</SectionLabel>
+      <img
+        src={url}
+        alt="Chart"
+        className="rounded-lg border border-border w-full max-h-96 object-contain bg-black/40"
+      />
+    </>
+  );
+}
