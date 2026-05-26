@@ -1,6 +1,6 @@
 {
-  "name": "Trader OS",
-  "short_name": "Trader OS",
+  "name": "Traders' OS",
+  "short_name": "Traders' OS",
   "description": "A calm behavioral trading journal and analytics platform.",
   "start_url": "/dashboard",
   "scope": "/",

@@ -19,7 +19,7 @@ function Landing() {
           <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
-          <span className="font-semibold tracking-tight">Trader OS</span>
+          <span className="font-semibold tracking-tight">Traders' OS</span>
         </div>
         <Button asChild variant="ghost" size="sm">
           <Link to="/login">Sign in</Link>
@@ -49,7 +49,7 @@ function Landing() {
       </main>
 
       <footer className="px-6 py-6 text-center text-xs text-muted-foreground">
-        Trader OS does not provide buy/sell calls, recommendations, or trading signals.
+        Traders' OS does not provide buy/sell calls, recommendations, or trading signals.
       </footer>
     </div>
   );

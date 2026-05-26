@@ -36,7 +36,7 @@ import type { ChecklistResponses } from "@/lib/workspace/constants";
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
     meta: [
-      { title: "Today — Trader OS" },
+      { title: "Today — Traders' OS" },
       { name: "description", content: "Your daily trading workspace and behavioral mirror." },
     ],
   }),

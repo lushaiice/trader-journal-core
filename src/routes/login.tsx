@@ -63,7 +63,7 @@ function LoginPage() {
           <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center mb-4">
             <TrendingUp className="h-5 w-5 text-primary" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Welcome to Trader OS</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome to Traders' OS</h1>
           <p className="text-sm text-muted-foreground mt-1.5">Sign in to your trading journal</p>
         </div>
 
@@ -126,7 +126,7 @@ function LoginPage() {
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-6">
-          By continuing, you acknowledge Trader OS is a journaling tool — not investment advice.
+          By continuing, you acknowledge Traders' OS is a journaling tool — not investment advice.
         </p>
       </div>
     </div>

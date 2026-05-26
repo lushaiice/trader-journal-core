@@ -1,4 +1,4 @@
-# Trader OS
+# Traders' OS
 
 A calm behavioral trading journal for retail traders.
 

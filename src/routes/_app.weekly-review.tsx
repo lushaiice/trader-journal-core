@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/_app/weekly-review")({
   head: () => ({
     meta: [
-      { title: "Weekly Review — Trader OS" },
+      { title: "Weekly Review — Traders' OS" },
       {
         name: "description",
         content: "Step back, see the week, and refine the next one.",

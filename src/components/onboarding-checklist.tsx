@@ -62,7 +62,7 @@ export function OnboardingChecklist({
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Getting started · {completed}/{total}
           </p>
-          <h2 className="text-base font-semibold mt-1">Your first week with Trader OS</h2>
+          <h2 className="text-base font-semibold mt-1">Your first week with Traders' OS</h2>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-md">
             A short, calm sequence to settle into the daily rhythm. Take it at your own pace.
           </p>

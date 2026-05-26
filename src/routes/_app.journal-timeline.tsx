@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/_app/journal-timeline")({
   head: () => ({
     meta: [
-      { title: "Journal Timeline — Trader OS" },
+      { title: "Journal Timeline — Traders' OS" },
       {
         name: "description",
         content: "Browse your full journaling history, day by day.",

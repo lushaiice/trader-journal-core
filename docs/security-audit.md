@@ -1,8 +1,8 @@
-# Trader OS — Security Audit
+# Traders' OS — Security Audit
 
 _Last reviewed: 2026-05-13. Pre-launch hardening pass._
 
-Trader OS stores private financial journaling data. Every row is owned by
+Traders' OS stores private financial journaling data. Every row is owned by
 exactly one authenticated user and must never be visible to another. This
 document records the access model and the defenses in place at each layer.
 

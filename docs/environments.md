@@ -1,6 +1,6 @@
 # Environments
 
-Trader OS uses three environments. Keep them simple and explicit.
+Traders' OS uses three environments. Keep them simple and explicit.
 
 | Env | URL | Backend | Purpose |
 |-----|-----|---------|---------|

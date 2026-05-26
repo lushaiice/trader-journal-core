@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="h-7 w-7 rounded-md bg-primary/15 flex items-center justify-center">
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
-          <span className="font-semibold tracking-tight">Trader OS</span>
+          <span className="font-semibold tracking-tight">Traders' OS</span>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {NAV.map((item) => {
@@ -109,7 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="h-7 w-7 rounded-md bg-primary/15 flex items-center justify-center">
               <TrendingUp className="h-4 w-4 text-primary" />
             </div>
-            <span className="font-semibold tracking-tight">Trader OS</span>
+            <span className="font-semibold tracking-tight">Traders' OS</span>
           </div>
           <Button variant="ghost" size="icon" onClick={handleLogout}>
             <LogOut className="h-4 w-4" />

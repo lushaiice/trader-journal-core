@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * Auth fixture for Trader OS E2E specs.
+ * Auth fixture for Traders' OS E2E specs.
  *
  * Session is injected via storageState populated by e2e/global.setup.ts.
  * There is no UI login step — the authedPage fixture simply provides a
