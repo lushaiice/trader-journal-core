@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { TradeForm } from "./trade-form";
 import { PostTradeReview } from "./post-trade-review";
 import { useTradeQuery, useDeleteTrade, type TradeWithRelations } from "@/lib/trades/api";
+import { useScreenshotUrl } from "@/hooks/trades/use-screenshot-url";
 import { EMOTIONAL_QUESTIONS } from "@/lib/trades/constants";
 import {
   disciplineScore,
