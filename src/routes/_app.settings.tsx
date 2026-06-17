@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { MessageSquare, Wallet } from "lucide-react";
+import { MessageSquare, Wallet, Sun, Moon, Monitor } from "lucide-react";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspacePreferences } from "@/lib/preferences";
+import { useTheme, type Theme } from "@/lib/theme-context";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -47,6 +49,8 @@ function SettingsPage() {
             </Button>
           </div>
         </section>
+
+        <AppearanceSection />
 
         <section className="surface-card p-6 space-y-5">
           <div>
@@ -175,5 +179,46 @@ function PrefRow({
       </div>
       {children}
     </div>
+  );
+}
+
+function AppearanceSection() {
+  const { theme, setTheme } = useTheme();
+  const options: { value: Theme; label: string; icon: typeof Sun }[] = [
+    { value: "light", label: "Light", icon: Sun },
+    { value: "dark", label: "Dark", icon: Moon },
+    { value: "system", label: "System", icon: Monitor },
+  ];
+  return (
+    <section className="surface-card p-6 space-y-4">
+      <div>
+        <h3 className="text-sm font-medium mb-1">Appearance</h3>
+        <p className="text-xs text-muted-foreground">
+          Choose how Traders' OS looks on this device.
+        </p>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {options.map((o) => {
+          const Icon = o.icon;
+          const active = theme === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => setTheme(o.value)}
+              className={cn(
+                "flex flex-col items-center gap-2 rounded-md border px-3 py-3 text-xs transition-colors",
+                active
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground hover:bg-accent/30",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }

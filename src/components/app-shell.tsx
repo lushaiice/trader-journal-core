@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -92,6 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex-1 min-w-0">
               <p className="text-xs truncate">{user?.email}</p>
             </div>
+            <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={handleLogout} className="h-7 w-7">
               <LogOut className="h-3.5 w-3.5" />
             </Button>
@@ -111,9 +113,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <span className="font-semibold tracking-tight">Traders' OS</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleLogout}>
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
 
         <main
