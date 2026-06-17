@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { MessageSquare, Wallet } from "lucide-react";
+import { MessageSquare, Wallet, Sun, Moon, Monitor } from "lucide-react";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspacePreferences } from "@/lib/preferences";
+import { useTheme, type Theme } from "@/lib/theme-context";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -47,6 +49,8 @@ function SettingsPage() {
             </Button>
           </div>
         </section>
+
+        <AppearanceSection />
 
         <section className="surface-card p-6 space-y-5">
           <div>
