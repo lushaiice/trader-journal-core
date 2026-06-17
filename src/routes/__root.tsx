@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider, themeInitScript } from "@/lib/theme-context";
 import { installGlobalErrorHandlers, observability } from "@/lib/observability";
 import { initialiseSentry } from "@/lib/sentry";
 
