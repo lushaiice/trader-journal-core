@@ -24,6 +24,7 @@ import {
 import { tradeFormSchema, type TradeFormValues } from "@/lib/trades/schema";
 import { ASSET_TYPES, DIRECTIONS, DISCIPLINE_RULES } from "@/lib/trades/constants";
 import { useSaveTrade, type TradeWithRelations } from "@/lib/trades/api";
+import { usePlaybooks } from "@/lib/playbooks/api";
 import {
   clearTradeDraft,
   loadTradeDraft,
