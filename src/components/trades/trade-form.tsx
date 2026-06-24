@@ -315,6 +315,14 @@ export function TradeForm({ initial, onSaved }: TradeFormProps) {
           <EmotionalSliders />
         </FormSection>
 
+        {/* Playbook */}
+        <FormSection
+          title="Playbook / Setup"
+          description="Tag this trade with one of your defined playbooks."
+        >
+          <PlaybookField />
+        </FormSection>
+
         {/* Tags */}
         <FormSection title="Setup Tags" description="Tag the strategy or context." collapsible>
           <TagsField />
