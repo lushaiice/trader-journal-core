@@ -224,11 +224,12 @@ function PreviewView({
 }) {
   const counts = preview.classified.reduce(
     (acc, c) => {
-      acc[c.classification]++;
+      acc[c.classification] = (acc[c.classification] ?? 0) + 1;
       return acc;
     },
-    { new: 0, duplicate: 0, overlap: 0 } as Record<string, number>,
+    { new: 0, duplicate: 0, overlap: 0, continuation: 0, ambiguous: 0 } as Record<string, number>,
   );
+
   const selectedCount = preview.selected.size;
 
   return (
@@ -244,8 +245,15 @@ function PreviewView({
           <span>{preview.classified.length} trades</span>
           <span>·</span>
           <Badge variant="secondary">{counts.new} new</Badge>
+          {counts.continuation > 0 && (
+            <Badge variant="secondary">{counts.continuation} continues open</Badge>
+          )}
           <Badge variant="outline">{counts.duplicate} duplicate</Badge>
           <Badge variant="outline">{counts.overlap} overlap</Badge>
+          {counts.ambiguous > 0 && (
+            <Badge variant="outline">{counts.ambiguous} ambiguous</Badge>
+          )}
+
         </div>
       </div>
 
@@ -294,7 +302,9 @@ function PreviewView({
                   ? t.exits.reduce((a, e) => a + e.exit_price * e.quantity, 0) / exitQty
                   : null;
               const pnl = grossPnl(t);
-              const importable = c.classification === "new";
+              const importable =
+                c.classification === "new" || c.classification === "continuation";
+
               return (
                 <TableRow
                   key={i}
@@ -341,7 +351,14 @@ function PreviewView({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <ClassChip cls={c.classification} />
+                    <div className="flex flex-col gap-0.5">
+                      <ClassChip cls={c.classification} />
+                      {c.continuationSummary && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {c.continuationSummary}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -355,6 +372,13 @@ function PreviewView({
           Overlap trades share fills with a previous import — complete them manually.
         </p>
       )}
+      {counts.ambiguous > 0 && (
+        <p className="text-xs text-muted-foreground mb-3">
+          Ambiguous trades match more than one open trade (or a manual open) for the symbol —
+          complete them manually.
+        </p>
+      )}
+
 
       <div className="flex items-center justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={busy}>
