@@ -18,14 +18,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
-import { importZerodhaTradebook } from "@/lib/trades/import";
+import { importZerodhaTradebook, parseZerodhaTradebook } from "@/lib/trades/import";
 import {
-  classifyTrades,
   loadExistingFillIds,
   persistImportedTrades,
-  type ClassifiedTrade,
   type PersistSummary,
 } from "@/lib/trades/import/persist";
+import {
+  classifyWithContinuation,
+  loadOpenTrades,
+  type ClassifiedTradeC3,
+} from "@/lib/trades/import/continuation";
 import type { ImportResult } from "@/lib/trades/import/types";
 import { GrossPnlBadge } from "@/components/trades/gross-pnl-badge";
 import { formatINR } from "@/lib/trades/calculations";
@@ -42,14 +45,15 @@ export const Route = createFileRoute("/_app/import")({
   ),
 });
 
+
 interface PreviewState {
   result: ImportResult;
-  classified: ClassifiedTrade[];
+  classified: ClassifiedTradeC3[];
   selected: Set<number>;
   fileName: string;
 }
 
-function grossPnl(t: ClassifiedTrade["trade"]): number {
+function grossPnl(t: ClassifiedTradeC3["trade"]): number {
   const sign = t.side === "long" ? 1 : -1;
   return t.exits.reduce(
     (acc, e) => acc + (e.exit_price - t.entry_price) * e.quantity * sign,
@@ -74,13 +78,30 @@ function ImportPage() {
     try {
       const text = await file.text();
       const result = importZerodhaTradebook(text);
-      const existing = await loadExistingFillIds(user.id);
-      const classified = classifyTrades(result.trades, existing);
+      const parsed = parseZerodhaTradebook(text);
+      const [existing, openTrades] = await Promise.all([
+        loadExistingFillIds(user.id),
+        loadOpenTrades(user.id),
+      ]);
+      const warningsSink = [...result.warnings];
+      const { items } = classifyWithContinuation(
+        parsed.fills,
+        result.trades,
+        existing,
+        openTrades,
+        warningsSink,
+      );
+      const enrichedResult: ImportResult = {
+        ...result,
+        warnings: warningsSink,
+      };
       const selected = new Set<number>();
-      classified.forEach((c, i) => {
-        if (c.classification === "new") selected.add(i);
+      items.forEach((c, i) => {
+        if (c.classification === "new" || c.classification === "continuation") {
+          selected.add(i);
+        }
       });
-      setPreview({ result, classified, selected, fileName: file.name });
+      setPreview({ result: enrichedResult, classified: items, selected, fileName: file.name });
     } catch (err) {
       toast.error("Could not read file", { description: (err as Error).message });
     } finally {
@@ -91,28 +112,29 @@ function ImportPage() {
   const confirm = useMutation({
     mutationFn: async () => {
       if (!preview || !user) throw new Error("No preview");
-      const subset = preview.classified.filter(
-        (c, i) => c.classification === "new" && preview.selected.has(i),
-      );
-      // For skipped (unchecked-new), classify as overlap so they're counted but not inserted.
-      const skippedNew = preview.classified.filter(
-        (c, i) => c.classification === "new" && !preview.selected.has(i),
-      );
-      const duplicates = preview.classified.filter((c) => c.classification === "duplicate");
-      const overlaps = preview.classified.filter((c) => c.classification === "overlap");
-      const s = await persistImportedTrades(subset, user.id);
-      // Account for what we deliberately skipped:
-      s.skippedDuplicate += duplicates.length;
-      s.flaggedOverlap += overlaps.length + skippedNew.length;
+      const actionable: ClassifiedTradeC3[] = preview.classified.map((c, i) => {
+        const importable =
+          c.classification === "new" || c.classification === "continuation";
+        if (importable && !preview.selected.has(i)) {
+          // demote unchecked importables to overlap so they're flagged not inserted
+          return { ...c, classification: "overlap" as const };
+        }
+        return c;
+      });
+      const s = await persistImportedTrades(actionable, user.id);
       return s;
     },
     onSuccess: (s) => {
       setSummary(s);
       qc.invalidateQueries({ queryKey: ["trades"] });
-      toast.success(`Imported ${s.imported} trade${s.imported === 1 ? "" : "s"}`);
+      const total = s.imported + s.continued;
+      toast.success(
+        `Imported ${s.imported} new + ${s.continued} continued (${total} total)`,
+      );
     },
     onError: (err) => {
       toast.error("Import failed", { description: (err as Error).message });
+
     },
   });
 
@@ -202,11 +224,12 @@ function PreviewView({
 }) {
   const counts = preview.classified.reduce(
     (acc, c) => {
-      acc[c.classification]++;
+      acc[c.classification] = (acc[c.classification] ?? 0) + 1;
       return acc;
     },
-    { new: 0, duplicate: 0, overlap: 0 } as Record<string, number>,
+    { new: 0, duplicate: 0, overlap: 0, continuation: 0, ambiguous: 0 } as Record<string, number>,
   );
+
   const selectedCount = preview.selected.size;
 
   return (
@@ -222,8 +245,15 @@ function PreviewView({
           <span>{preview.classified.length} trades</span>
           <span>·</span>
           <Badge variant="secondary">{counts.new} new</Badge>
+          {counts.continuation > 0 && (
+            <Badge variant="secondary">{counts.continuation} continues open</Badge>
+          )}
           <Badge variant="outline">{counts.duplicate} duplicate</Badge>
           <Badge variant="outline">{counts.overlap} overlap</Badge>
+          {counts.ambiguous > 0 && (
+            <Badge variant="outline">{counts.ambiguous} ambiguous</Badge>
+          )}
+
         </div>
       </div>
 
@@ -272,7 +302,9 @@ function PreviewView({
                   ? t.exits.reduce((a, e) => a + e.exit_price * e.quantity, 0) / exitQty
                   : null;
               const pnl = grossPnl(t);
-              const importable = c.classification === "new";
+              const importable =
+                c.classification === "new" || c.classification === "continuation";
+
               return (
                 <TableRow
                   key={i}
@@ -319,7 +351,14 @@ function PreviewView({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <ClassChip cls={c.classification} />
+                    <div className="flex flex-col gap-0.5">
+                      <ClassChip cls={c.classification} />
+                      {c.continuationSummary && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {c.continuationSummary}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -333,6 +372,13 @@ function PreviewView({
           Overlap trades share fills with a previous import — complete them manually.
         </p>
       )}
+      {counts.ambiguous > 0 && (
+        <p className="text-xs text-muted-foreground mb-3">
+          Ambiguous trades match more than one open trade (or a manual open) for the symbol —
+          complete them manually.
+        </p>
+      )}
+
 
       <div className="flex items-center justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={busy}>
@@ -347,12 +393,24 @@ function PreviewView({
   );
 }
 
-function ClassChip({ cls }: { cls: "new" | "duplicate" | "overlap" }) {
+function ClassChip({ cls }: { cls: ClassifiedTradeC3["classification"] }) {
   if (cls === "new") return <Badge variant="secondary" className="text-[10px]">New</Badge>;
+  if (cls === "continuation")
+    return (
+      <Badge variant="secondary" className="text-[10px]">
+        Continues open position
+      </Badge>
+    );
   if (cls === "duplicate")
     return (
       <Badge variant="outline" className="text-[10px] text-muted-foreground">
         Duplicate
+      </Badge>
+    );
+  if (cls === "ambiguous")
+    return (
+      <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-600/40">
+        Ambiguous
       </Badge>
     );
   return (
@@ -362,16 +420,19 @@ function ClassChip({ cls }: { cls: "new" | "duplicate" | "overlap" }) {
   );
 }
 
+
 function SummaryView({ summary, onDone }: { summary: PersistSummary; onDone: () => void }) {
   return (
     <div className="surface-card p-6">
       <h3 className="text-sm font-medium mb-3">Import complete</h3>
       <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
         <Row label="Imported" value={summary.imported} />
+        <Row label="Continued" value={summary.continued} />
         <Row label="Skipped (duplicate)" value={summary.skippedDuplicate} />
         <Row label="Flagged (overlap)" value={summary.flaggedOverlap} />
         <Row label="Failed" value={summary.failed} tone={summary.failed > 0 ? "bad" : undefined} />
       </dl>
+
       {summary.errors.length > 0 && (
         <ul className="mt-4 space-y-1 text-xs text-destructive">
           {summary.errors.map((e, i) => (

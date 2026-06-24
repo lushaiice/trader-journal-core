@@ -1,7 +1,7 @@
 export type InstrumentType = "equity" | "futures" | "options";
 export type FillSide = "buy" | "sell";
 export type TradeSide = "long" | "short";
-export type TradeStatus = "open" | "closed";
+export type TradeStatus = "open" | "partial" | "closed";
 
 export interface Fill {
   symbol: string;
@@ -31,7 +31,7 @@ export interface ReconstructedTrade {
   symbol: string;
   instrument_type: InstrumentType;
   side: TradeSide;
-  status: TradeStatus;
+  status: "open" | "closed";
   entry_date: string;
   entry_time: string;
   entry_price: number;
@@ -52,6 +52,9 @@ export interface ImportWarning {
     | "open_position"
     | "position_flip"
     | "symbol_too_long"
+    | "added_to_position"
+    | "out_of_order_fill"
+    | "ambiguous_continuation"
     | string;
   message: string;
   symbol?: string;
@@ -70,4 +73,35 @@ export interface ImportResult {
   trades: ReconstructedTrade[];
   warnings: ImportWarning[];
   stats: ImportStats;
+}
+
+/** Seed describing an existing OPEN or PARTIAL imported trade for one symbol. */
+export interface SeedPosition {
+  tradeId: string;
+  symbol: string;
+  side: TradeSide;
+  entryPrice: number; // existing weighted-avg entry
+  entryQuantity: number; // existing total entry qty
+  openQuantity: number; // net qty still open (entry - exited)
+  earliestEntryAt: Date;
+}
+
+export interface ContinuationExit {
+  exitPrice: number;
+  quantity: number;
+  exitDate: string;
+  exitTime: string;
+  brokerTradeId: string;
+}
+
+export interface Continuation {
+  existingTradeId: string;
+  symbol: string;
+  addedFillTradeIds: string[];
+  newEntryPrice: number;
+  newQuantity: number;
+  newExits: ContinuationExit[];
+  newStatus: "open" | "partial" | "closed";
+  flipRemainder?: ReconstructedTrade;
+  warnings: string[];
 }
