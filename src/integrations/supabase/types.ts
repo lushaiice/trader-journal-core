@@ -427,6 +427,8 @@ export type Database = {
           emotion_tags: string[] | null
           entry_date: string
           entry_price: number
+          entry_time: string | null
+          external_ref: string | null
           id: string
           instrument_type: string
           lessons_learned: string | null
@@ -435,6 +437,7 @@ export type Database = {
           planned_entry: number | null
           planned_stop_loss: number | null
           planned_target: number | null
+          playbook_id: string | null
           portfolio_id: string | null
           quantity: number
           recovery_urge: number | null
@@ -443,6 +446,7 @@ export type Database = {
           setup: string | null
           setup_match: number | null
           side: string
+          source: string
           status: string
           stop_loss: number | null
           strategy: string | null
@@ -462,6 +466,8 @@ export type Database = {
           emotion_tags?: string[] | null
           entry_date?: string
           entry_price: number
+          entry_time?: string | null
+          external_ref?: string | null
           id?: string
           instrument_type?: string
           lessons_learned?: string | null
@@ -470,6 +476,7 @@ export type Database = {
           planned_entry?: number | null
           planned_stop_loss?: number | null
           planned_target?: number | null
+          playbook_id?: string | null
           portfolio_id?: string | null
           quantity: number
           recovery_urge?: number | null
@@ -478,6 +485,7 @@ export type Database = {
           setup?: string | null
           setup_match?: number | null
           side?: string
+          source?: string
           status?: string
           stop_loss?: number | null
           strategy?: string | null
@@ -497,6 +505,8 @@ export type Database = {
           emotion_tags?: string[] | null
           entry_date?: string
           entry_price?: number
+          entry_time?: string | null
+          external_ref?: string | null
           id?: string
           instrument_type?: string
           lessons_learned?: string | null
@@ -505,6 +515,7 @@ export type Database = {
           planned_entry?: number | null
           planned_stop_loss?: number | null
           planned_target?: number | null
+          playbook_id?: string | null
           portfolio_id?: string | null
           quantity?: number
           recovery_urge?: number | null
@@ -513,6 +524,7 @@ export type Database = {
           setup?: string | null
           setup_match?: number | null
           side?: string
+          source?: string
           status?: string
           stop_loss?: number | null
           strategy?: string | null

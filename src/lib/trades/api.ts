@@ -83,6 +83,7 @@ async function persistTrade(values: TradeFormParsed, userId: string, tradeId?: s
     tags: values.tags,
     notes: values.notes || null,
     screenshot_url: values.screenshot_url || null,
+    playbook_id: values.playbook_id ?? null,
     status,
   };
 

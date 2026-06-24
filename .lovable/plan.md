@@ -1,43 +1,44 @@
+## Schema groundwork for trades table
 
-## Goal
-Let users switch between light, dark, and system themes. Currently the app is hard-coded dark (`<html className="dark">` in `__root.tsx`, and `:root` in `src/styles.css` duplicates the dark palette).
+Single migration + minimal code wiring. No UI, no importer, no playbook screens.
 
-## Changes
+### 1. Migration
 
-### 1. Design tokens — `src/styles.css`
-- Replace `:root` block with a true **light** palette (calm, premium, minimal — matching the Traders' OS aesthetic): near-white background, dark slate foreground, same primary blue, success/warning/destructive tuned for light surfaces, lighter sidebar, adjusted chart colors for legibility.
-- Keep the existing dark palette under `.dark` (already correct).
-- Remove `color-scheme: dark` hard-coding from `html`; instead set `color-scheme: light dark` and let the `.dark` class drive it via a `.dark { color-scheme: dark }` rule.
+Add four columns to `public.trades` and one partial unique index:
 
-### 2. Theme provider — new `src/lib/theme-context.tsx`
-- `ThemeProvider` with `theme: "light" | "dark" | "system"`, `resolvedTheme: "light" | "dark"`.
-- Persist choice in `localStorage` under `trader-os:theme`.
-- On mount and on change, toggle `.dark` class on `document.documentElement`.
-- Listen to `matchMedia("(prefers-color-scheme: dark)")` when in `system` mode.
-- SSR-safe: default to `system`, no window access at module scope.
-- Inline `<script>` injected via root `head` to set the class before hydration (prevents flash of wrong theme).
+```sql
+ALTER TABLE public.trades
+  ADD COLUMN source text NOT NULL DEFAULT 'manual'
+    CHECK (source IN ('manual','csv_import','kite')),
+  ADD COLUMN external_ref text,
+  ADD COLUMN entry_time time without time zone,
+  ADD COLUMN playbook_id uuid;
 
-### 3. Wire provider — `src/routes/__root.tsx`
-- Remove `className="dark"` from `<html>`.
-- Add the anti-flash inline script in the shell `<head>`.
-- Wrap `<Outlet />` tree in `<ThemeProvider>` inside `RootComponent`.
+CREATE UNIQUE INDEX trades_user_external_ref_unique
+  ON public.trades (user_id, external_ref)
+  WHERE external_ref IS NOT NULL;
+```
 
-### 4. Theme toggle UI — new `src/components/theme-toggle.tsx`
-- Dropdown menu (shadcn `DropdownMenu`) with Sun/Moon/Monitor icons and Light / Dark / System options.
-- Icon button suitable for both desktop sidebar footer and mobile header.
+Existing rows backfill to `source='manual'` automatically via the column default. No RLS changes — existing owner-scoped policies cover the new columns. No FK on `playbook_id` (playbooks table doesn't exist yet).
 
-### 5. Surface the toggle — `src/components/app-shell.tsx`
-- Place `<ThemeToggle />` in the desktop sidebar footer (next to logout) and in the mobile header (next to logout).
+### 2. Generated types
 
-### 6. Settings page — `src/routes/_app.settings.tsx`
-- Add an "Appearance" section with the same three-way control (radio group or segmented buttons) bound to the theme context, so users can change it from settings as well.
+`src/integrations/supabase/types.ts` regenerates after migration apply, exposing `source`, `external_ref`, `entry_time`, `playbook_id` on `trades` Row/Insert/Update.
 
-## Out of scope
-- No business-logic, route, or data changes.
-- Chart palette stays the same token names; only the values shift between themes via CSS variables, so charts adapt automatically.
-- No tests added/changed; no e2e changes (smoke title assertion still passes).
+### 3. Form schema (`src/lib/trades/schema.ts`)
 
-## Verification
-- Toggle in sidebar flips palette instantly; refresh preserves choice; "System" follows OS preference.
-- No flash of dark theme on initial load when light is selected.
-- `bunx tsc --noEmit` clean.
+Add only `playbook_id` to `tradeFormSchema`:
+
+```ts
+playbook_id: z.string().uuid().optional().nullable(),
+```
+
+`source`, `external_ref`, `entry_time` are server/importer-owned — not in the form.
+
+### 4. API wiring (`src/lib/trades/api.ts`)
+
+In `persistTrade`, include `playbook_id: values.playbook_id ?? null` in `tradePayload`. Do not set `source` — let the DB default to `'manual'`.
+
+### Out of scope (later tasks)
+
+Playbooks table + FK, CSV/Kite importer, entry_time population, any UI surfacing the new fields.
