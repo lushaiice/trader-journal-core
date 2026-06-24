@@ -112,17 +112,15 @@ export function aggregateFills(fills: Fill[]): AggregateOutput {
 
     let current: InProgress | null = null;
 
-    const openWith = (f: SplitFill) => {
-      current = {
-        symbol: f.symbol,
-        instrument_type: f.instrumentType,
-        openingSide: f.side,
-        entries: [f],
-        exits: [],
-        fillTradeIds: [f.tradeId],
-        position: f.side === "buy" ? f.quantity : -f.quantity,
-      };
-    };
+    const openWith = (f: SplitFill): InProgress => ({
+      symbol: f.symbol,
+      instrument_type: f.instrumentType,
+      openingSide: f.side,
+      entries: [f],
+      exits: [],
+      fillTradeIds: [f.tradeId],
+      position: f.side === "buy" ? f.quantity : -f.quantity,
+    });
 
     for (const fill of group) {
       let remaining = fill.quantity;
@@ -131,10 +129,12 @@ export function aggregateFills(fills: Fill[]): AggregateOutput {
         const slice: SplitFill = { ...fill, quantity: remaining };
 
         if (current === null) {
-          openWith(slice);
+          current = openWith(slice);
           remaining = 0;
           break;
         }
+
+
 
         const signed = slice.side === "buy" ? slice.quantity : -slice.quantity;
         const newPos = current.position + signed;
