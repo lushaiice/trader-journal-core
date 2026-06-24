@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      broker_fills: {
+        Row: {
+          broker: string
+          broker_trade_id: string
+          created_at: string
+          id: string
+          imported_trade_id: string | null
+          user_id: string
+        }
+        Insert: {
+          broker?: string
+          broker_trade_id: string
+          created_at?: string
+          id?: string
+          imported_trade_id?: string | null
+          user_id: string
+        }
+        Update: {
+          broker?: string
+          broker_trade_id?: string
+          created_at?: string
+          id?: string
+          imported_trade_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broker_fills_imported_trade_id_fkey"
+            columns: ["imported_trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       capital_events: {
         Row: {
           amount: number
