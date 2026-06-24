@@ -14,6 +14,7 @@ import {
   Clock,
   Wallet,
   MessageSquare,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/add-trade", label: "Add Trade", icon: PlusCircle },
   { to: "/trades", label: "Trades", icon: History },
+  { to: "/playbooks", label: "Playbooks", icon: BookOpen },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   
   { to: "/journal-timeline", label: "Timeline", icon: Clock },
