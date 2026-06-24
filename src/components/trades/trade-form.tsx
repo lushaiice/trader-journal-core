@@ -24,6 +24,7 @@ import {
 import { tradeFormSchema, type TradeFormValues } from "@/lib/trades/schema";
 import { ASSET_TYPES, DIRECTIONS, DISCIPLINE_RULES } from "@/lib/trades/constants";
 import { useSaveTrade, type TradeWithRelations } from "@/lib/trades/api";
+import { usePlaybooks } from "@/lib/playbooks/api";
 import {
   clearTradeDraft,
   loadTradeDraft,
@@ -74,6 +75,7 @@ function buildDefaults(initial?: TradeWithRelations): TradeFormValues {
     tags: (t?.tags as string[] | null) ?? [],
     notes: t?.notes ?? "",
     screenshot_url: t?.screenshot_url ?? null,
+    playbook_id: t?.playbook_id ?? null,
     discipline:
       initial?.discipline.map((d) => ({ rule: d.rule, followed: d.followed })) ??
       DISCIPLINE_RULES.map((r) => ({ rule: r.key, followed: r.positive })),
@@ -313,6 +315,14 @@ export function TradeForm({ initial, onSaved }: TradeFormProps) {
           <EmotionalSliders />
         </FormSection>
 
+        {/* Playbook */}
+        <FormSection
+          title="Playbook / Setup"
+          description="Tag this trade with one of your defined playbooks."
+        >
+          <PlaybookField />
+        </FormSection>
+
         {/* Tags */}
         <FormSection title="Setup Tags" description="Tag the strategy or context." collapsible>
           <TagsField />
@@ -369,5 +379,48 @@ export function TradeForm({ initial, onSaved }: TradeFormProps) {
         </div>
       </form>
     </FormProvider>
+  );
+}
+
+const PLAYBOOK_NONE = "__none__";
+
+function PlaybookField() {
+  const { data: playbooks = [], isLoading } = usePlaybooks();
+  return (
+    <FormField
+      name="playbook_id"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="sr-only">Playbook</FormLabel>
+          <Select
+            value={field.value ?? PLAYBOOK_NONE}
+            onValueChange={(v) => field.onChange(v === PLAYBOOK_NONE ? null : v)}
+            disabled={isLoading}
+          >
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={isLoading ? "Loading playbooks…" : "Select a playbook"}
+                />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              <SelectItem value={PLAYBOOK_NONE}>None</SelectItem>
+              {playbooks.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {playbooks.length === 0 && !isLoading && (
+            <p className="text-[11px] text-muted-foreground mt-1">
+              No playbooks yet — create one in Playbooks to tag setups.
+            </p>
+          )}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 }
