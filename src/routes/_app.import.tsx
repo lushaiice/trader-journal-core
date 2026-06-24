@@ -50,9 +50,9 @@ interface PreviewState {
 }
 
 function grossPnl(t: ClassifiedTrade["trade"]): number {
-  const sign = t.trade.side === "long" ? 1 : -1;
-  return t.trade.exits.reduce(
-    (acc, e) => acc + (e.exit_price - t.trade.entry_price) * e.quantity * sign,
+  const sign = t.side === "long" ? 1 : -1;
+  return t.exits.reduce(
+    (acc, e) => acc + (e.exit_price - t.entry_price) * e.quantity * sign,
     0,
   );
 }
@@ -271,7 +271,7 @@ function PreviewView({
                 exitQty > 0
                   ? t.exits.reduce((a, e) => a + e.exit_price * e.quantity, 0) / exitQty
                   : null;
-              const pnl = grossPnl(c);
+              const pnl = grossPnl(t);
               const importable = c.classification === "new";
               return (
                 <TableRow

@@ -18,6 +18,7 @@ import { Route as AppTodayRouteImport } from './routes/_app.today'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppPlaybooksRouteImport } from './routes/_app.playbooks'
 import { Route as AppJournalTimelineRouteImport } from './routes/_app.journal-timeline'
+import { Route as AppImportRouteImport } from './routes/_app.import'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCapitalRouteImport } from './routes/_app.capital'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
@@ -67,6 +68,11 @@ const AppJournalTimelineRoute = AppJournalTimelineRouteImport.update({
   path: '/journal-timeline',
   getParentRoute: () => AppRoute,
 } as any)
+const AppImportRoute = AppImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
+  '/import': typeof AppImportRoute
   '/journal-timeline': typeof AppJournalTimelineRoute
   '/playbooks': typeof AppPlaybooksRoute
   '/settings': typeof AppSettingsRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
+  '/import': typeof AppImportRoute
   '/journal-timeline': typeof AppJournalTimelineRoute
   '/playbooks': typeof AppPlaybooksRoute
   '/settings': typeof AppSettingsRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/capital': typeof AppCapitalRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/import': typeof AppImportRoute
   '/_app/journal-timeline': typeof AppJournalTimelineRoute
   '/_app/playbooks': typeof AppPlaybooksRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/capital'
     | '/dashboard'
+    | '/import'
     | '/journal-timeline'
     | '/playbooks'
     | '/settings'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/capital'
     | '/dashboard'
+    | '/import'
     | '/journal-timeline'
     | '/playbooks'
     | '/settings'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/capital'
     | '/_app/dashboard'
+    | '/_app/import'
     | '/_app/journal-timeline'
     | '/_app/playbooks'
     | '/_app/settings'
@@ -249,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJournalTimelineRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/import': {
+      id: '/_app/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AppImportRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -285,6 +304,7 @@ interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCapitalRoute: typeof AppCapitalRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppImportRoute: typeof AppImportRoute
   AppJournalTimelineRoute: typeof AppJournalTimelineRoute
   AppPlaybooksRoute: typeof AppPlaybooksRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -298,6 +318,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCapitalRoute: AppCapitalRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppImportRoute: AppImportRoute,
   AppJournalTimelineRoute: AppJournalTimelineRoute,
   AppPlaybooksRoute: AppPlaybooksRoute,
   AppSettingsRoute: AppSettingsRoute,
