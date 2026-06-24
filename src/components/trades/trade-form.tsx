@@ -75,6 +75,7 @@ function buildDefaults(initial?: TradeWithRelations): TradeFormValues {
     tags: (t?.tags as string[] | null) ?? [],
     notes: t?.notes ?? "",
     screenshot_url: t?.screenshot_url ?? null,
+    playbook_id: t?.playbook_id ?? null,
     discipline:
       initial?.discipline.map((d) => ({ rule: d.rule, followed: d.followed })) ??
       DISCIPLINE_RULES.map((r) => ({ rule: r.key, followed: r.positive })),
