@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { MessageSquare, Wallet, Sun, Moon, Monitor } from "lucide-react";
+import { MessageSquare, Wallet, Sun, Moon, Monitor, BookOpen } from "lucide-react";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -129,6 +129,20 @@ function SettingsPage() {
           </div>
           <Button asChild size="sm" variant="secondary">
             <Link to="/capital">Manage</Link>
+          </Button>
+        </section>
+
+        <section className="surface-card p-6 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className="text-sm font-medium mb-1 flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-primary" /> Playbooks
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Define the setups you trade so you can tag each entry.
+            </p>
+          </div>
+          <Button asChild size="sm" variant="secondary">
+            <Link to="/playbooks">Manage</Link>
           </Button>
         </section>
 
