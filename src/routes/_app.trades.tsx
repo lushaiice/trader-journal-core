@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { History, PlusCircle, Search, Loader2 } from "lucide-react";
+import { History, PlusCircle, Search, Loader2, Upload } from "lucide-react";
 import { isAfter, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
@@ -35,6 +35,17 @@ type SideFilter = "all" | "long" | "short";
 type TimeFilter = "all" | "7" | "30" | "90";
 type SortKey = "latest" | "pnl";
 
+function isNeedsReflection(t: { trade: { confidence: number | null; emotion_level: number | null; recovery_urge: number | null; discipline_feel: number | null; setup_match: number | null; source: string | null } }) {
+  return (
+    t.trade.source === "csv_import" &&
+    t.trade.confidence == null &&
+    t.trade.emotion_level == null &&
+    t.trade.recovery_urge == null &&
+    t.trade.discipline_feel == null &&
+    t.trade.setup_match == null
+  );
+}
+
 function Trades() {
   const { data, isLoading } = useTradesQuery();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -43,9 +54,16 @@ function Trades() {
   const [side, setSide] = useState<SideFilter>("all");
   const [time, setTime] = useState<TimeFilter>("all");
   const [sort, setSort] = useState<SortKey>("latest");
+  const [needsReflection, setNeedsReflection] = useState(false);
+
+  const needsReflectionCount = useMemo(
+    () => (data ?? []).filter(isNeedsReflection).length,
+    [data],
+  );
 
   const filtered = useMemo(() => {
     let list = data ?? [];
+    if (needsReflection) list = list.filter(isNeedsReflection);
     if (search) {
       const q = search.toUpperCase();
       list = list.filter((t) => t.trade.symbol.includes(q));
@@ -65,7 +83,7 @@ function Trades() {
       sorted.sort((a, b) => netPnl(b.trade, b.exits) - netPnl(a.trade, a.exits));
     }
     return sorted;
-  }, [data, search, asset, side, time, sort]);
+  }, [data, needsReflection, search, asset, side, time, sort]);
 
   return (
     <>
@@ -73,15 +91,50 @@ function Trades() {
         title="Trade History"
         description="Every trade you've logged."
         action={
-          <Button asChild size="sm">
-            <Link to="/add-trade">
-              <PlusCircle className="h-4 w-4 mr-2" /> Add trade
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link to="/import">
+                <Upload className="h-4 w-4 mr-2" /> Import from broker
+              </Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/add-trade">
+                <PlusCircle className="h-4 w-4 mr-2" /> Add trade
+              </Link>
+            </Button>
+          </div>
         }
       />
 
+      {needsReflectionCount > 0 && (
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => setNeedsReflection((v) => !v)}
+            className={
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors " +
+              (needsReflection
+                ? "bg-primary/10 border-primary/40 text-foreground"
+                : "border-border text-muted-foreground hover:text-foreground")
+            }
+          >
+            Needs reflection
+            <span className="tabular-nums">({needsReflectionCount})</span>
+          </button>
+          {needsReflection && (
+            <button
+              type="button"
+              onClick={() => setNeedsReflection(false)}
+              className="text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              clear
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="surface-card p-3 md:p-4 mb-4 grid gap-2 md:grid-cols-[1fr_auto_auto_auto_auto]">
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
