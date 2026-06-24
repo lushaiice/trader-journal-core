@@ -91,11 +91,18 @@ function Trades() {
         title="Trade History"
         description="Every trade you've logged."
         action={
-          <Button asChild size="sm">
-            <Link to="/add-trade">
-              <PlusCircle className="h-4 w-4 mr-2" /> Add trade
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link to="/import">
+                <Upload className="h-4 w-4 mr-2" /> Import from broker
+              </Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/add-trade">
+                <PlusCircle className="h-4 w-4 mr-2" /> Add trade
+              </Link>
+            </Button>
+          </div>
         }
       />
 
