@@ -18,14 +18,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth-context";
-import { importZerodhaTradebook } from "@/lib/trades/import";
+import { importZerodhaTradebook, parseZerodhaTradebook } from "@/lib/trades/import";
 import {
-  classifyTrades,
   loadExistingFillIds,
   persistImportedTrades,
-  type ClassifiedTrade,
   type PersistSummary,
 } from "@/lib/trades/import/persist";
+import {
+  classifyWithContinuation,
+  loadOpenTrades,
+  type ClassifiedTradeC3,
+} from "@/lib/trades/import/continuation";
 import type { ImportResult } from "@/lib/trades/import/types";
 import { GrossPnlBadge } from "@/components/trades/gross-pnl-badge";
 import { formatINR } from "@/lib/trades/calculations";
@@ -41,6 +44,7 @@ export const Route = createFileRoute("/_app/import")({
     </SectionErrorBoundary>
   ),
 });
+
 
 interface PreviewState {
   result: ImportResult;
