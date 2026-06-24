@@ -386,8 +386,6 @@ const PLAYBOOK_NONE = "__none__";
 
 function PlaybookField() {
   const { data: playbooks = [], isLoading } = usePlaybooks();
-  const { control } = useForm<TradeFormValues>(); // placeholder to satisfy TS; replaced below
-  void control;
   return (
     <FormField
       name="playbook_id"
