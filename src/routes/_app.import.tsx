@@ -393,12 +393,24 @@ function PreviewView({
   );
 }
 
-function ClassChip({ cls }: { cls: "new" | "duplicate" | "overlap" }) {
+function ClassChip({ cls }: { cls: ClassifiedTradeC3["classification"] }) {
   if (cls === "new") return <Badge variant="secondary" className="text-[10px]">New</Badge>;
+  if (cls === "continuation")
+    return (
+      <Badge variant="secondary" className="text-[10px]">
+        Continues open position
+      </Badge>
+    );
   if (cls === "duplicate")
     return (
       <Badge variant="outline" className="text-[10px] text-muted-foreground">
         Duplicate
+      </Badge>
+    );
+  if (cls === "ambiguous")
+    return (
+      <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-600/40">
+        Ambiguous
       </Badge>
     );
   return (
@@ -408,16 +420,19 @@ function ClassChip({ cls }: { cls: "new" | "duplicate" | "overlap" }) {
   );
 }
 
+
 function SummaryView({ summary, onDone }: { summary: PersistSummary; onDone: () => void }) {
   return (
     <div className="surface-card p-6">
       <h3 className="text-sm font-medium mb-3">Import complete</h3>
       <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
         <Row label="Imported" value={summary.imported} />
+        <Row label="Continued" value={summary.continued} />
         <Row label="Skipped (duplicate)" value={summary.skippedDuplicate} />
         <Row label="Flagged (overlap)" value={summary.flaggedOverlap} />
         <Row label="Failed" value={summary.failed} tone={summary.failed > 0 ? "bad" : undefined} />
       </dl>
+
       {summary.errors.length > 0 && (
         <ul className="mt-4 space-y-1 text-xs text-destructive">
           {summary.errors.map((e, i) => (
