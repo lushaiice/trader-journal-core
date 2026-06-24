@@ -87,7 +87,7 @@ function PlaybooksPage() {
       <PageHeader
         title="Playbooks"
         description="Define named setups and tag your trades to track which strategies you actually run."
-        actions={
+        action={
           <Button size="sm" onClick={openCreate}>
             <PlusCircle className="h-4 w-4 mr-2" />
             New playbook
