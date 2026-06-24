@@ -48,12 +48,12 @@ export const Route = createFileRoute("/_app/import")({
 
 interface PreviewState {
   result: ImportResult;
-  classified: ClassifiedTrade[];
+  classified: ClassifiedTradeC3[];
   selected: Set<number>;
   fileName: string;
 }
 
-function grossPnl(t: ClassifiedTrade["trade"]): number {
+function grossPnl(t: ClassifiedTradeC3["trade"]): number {
   const sign = t.side === "long" ? 1 : -1;
   return t.exits.reduce(
     (acc, e) => acc + (e.exit_price - t.entry_price) * e.quantity * sign,
@@ -78,13 +78,30 @@ function ImportPage() {
     try {
       const text = await file.text();
       const result = importZerodhaTradebook(text);
-      const existing = await loadExistingFillIds(user.id);
-      const classified = classifyTrades(result.trades, existing);
+      const parsed = parseZerodhaTradebook(text);
+      const [existing, openTrades] = await Promise.all([
+        loadExistingFillIds(user.id),
+        loadOpenTrades(user.id),
+      ]);
+      const warningsSink = [...result.warnings];
+      const { items } = classifyWithContinuation(
+        parsed.fills,
+        result.trades,
+        existing,
+        openTrades,
+        warningsSink,
+      );
+      const enrichedResult: ImportResult = {
+        ...result,
+        warnings: warningsSink,
+      };
       const selected = new Set<number>();
-      classified.forEach((c, i) => {
-        if (c.classification === "new") selected.add(i);
+      items.forEach((c, i) => {
+        if (c.classification === "new" || c.classification === "continuation") {
+          selected.add(i);
+        }
       });
-      setPreview({ result, classified, selected, fileName: file.name });
+      setPreview({ result: enrichedResult, classified: items, selected, fileName: file.name });
     } catch (err) {
       toast.error("Could not read file", { description: (err as Error).message });
     } finally {
@@ -95,28 +112,29 @@ function ImportPage() {
   const confirm = useMutation({
     mutationFn: async () => {
       if (!preview || !user) throw new Error("No preview");
-      const subset = preview.classified.filter(
-        (c, i) => c.classification === "new" && preview.selected.has(i),
-      );
-      // For skipped (unchecked-new), classify as overlap so they're counted but not inserted.
-      const skippedNew = preview.classified.filter(
-        (c, i) => c.classification === "new" && !preview.selected.has(i),
-      );
-      const duplicates = preview.classified.filter((c) => c.classification === "duplicate");
-      const overlaps = preview.classified.filter((c) => c.classification === "overlap");
-      const s = await persistImportedTrades(subset, user.id);
-      // Account for what we deliberately skipped:
-      s.skippedDuplicate += duplicates.length;
-      s.flaggedOverlap += overlaps.length + skippedNew.length;
+      const actionable: ClassifiedTradeC3[] = preview.classified.map((c, i) => {
+        const importable =
+          c.classification === "new" || c.classification === "continuation";
+        if (importable && !preview.selected.has(i)) {
+          // demote unchecked importables to overlap so they're flagged not inserted
+          return { ...c, classification: "overlap" as const };
+        }
+        return c;
+      });
+      const s = await persistImportedTrades(actionable, user.id);
       return s;
     },
     onSuccess: (s) => {
       setSummary(s);
       qc.invalidateQueries({ queryKey: ["trades"] });
-      toast.success(`Imported ${s.imported} trade${s.imported === 1 ? "" : "s"}`);
+      const total = s.imported + s.continued;
+      toast.success(
+        `Imported ${s.imported} new + ${s.continued} continued (${total} total)`,
+      );
     },
     onError: (err) => {
       toast.error("Import failed", { description: (err as Error).message });
+
     },
   });
 
