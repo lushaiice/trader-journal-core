@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { applyContinuation, type ClassifiedTradeC3 } from "./continuation";
 import type { ReconstructedTrade } from "./types";
 
 export type Classification = "new" | "duplicate" | "overlap";
@@ -10,8 +11,9 @@ export interface ClassifiedTrade {
 }
 
 /**
- * Pure classification: given a set of broker_trade_ids already ingested for this user,
- * decide for each reconstructed trade whether it is NEW, DUPLICATE, or OVERLAP.
+ * Pure classification (C2 surface, kept for back-compat with existing tests):
+ * given a set of broker_trade_ids already ingested for this user, decide for
+ * each reconstructed trade whether it is NEW, DUPLICATE, or OVERLAP.
  */
 export function classifyTrades(
   trades: ReconstructedTrade[],
@@ -41,10 +43,12 @@ export async function hashFillIds(ids: string[]): Promise<string> {
 
 export interface PersistSummary {
   imported: number;
+  continued: number;
   skippedDuplicate: number;
   flaggedOverlap: number;
   failed: number;
   errors: Array<{ symbol: string; message: string }>;
+  warnings: Array<{ symbol: string; message: string }>;
 }
 
 /** Load existing broker_trade_ids for the user (single query). */
@@ -62,20 +66,27 @@ export async function loadExistingFillIds(
 }
 
 /**
- * Persist NEW reconstructed trades. DUPLICATE/OVERLAP are not inserted.
+ * Persist a C3-classified import:
+ *   - "new"          → INSERT a fresh trade (existing C2 path).
+ *   - "continuation" → applyContinuation on the existing open trade, then
+ *                      persist any flipRemainder as a new trade.
+ *   - "duplicate" / "overlap" / "ambiguous" → not inserted (counted).
+ *
  * Per-trade try/catch — a single failure never aborts the batch.
  */
 export async function persistImportedTrades(
-  classified: ClassifiedTrade[],
+  classified: ClassifiedTradeC3[] | ClassifiedTrade[],
   userId: string,
   broker = "zerodha",
 ): Promise<PersistSummary> {
   const summary: PersistSummary = {
     imported: 0,
+    continued: 0,
     skippedDuplicate: 0,
     flaggedOverlap: 0,
     failed: 0,
     errors: [],
+    warnings: [],
   };
 
   for (const item of classified) {
@@ -83,10 +94,44 @@ export async function persistImportedTrades(
       summary.skippedDuplicate++;
       continue;
     }
-    if (item.classification === "overlap") {
+    if (item.classification === "overlap" || item.classification === "ambiguous") {
       summary.flaggedOverlap++;
       continue;
     }
+    if (item.classification === "continuation") {
+      const c3 = item as ClassifiedTradeC3;
+      if (!c3.continuation) {
+        summary.failed++;
+        summary.errors.push({
+          symbol: item.trade.symbol,
+          message: "continuation missing",
+        });
+        continue;
+      }
+      try {
+        await applyContinuation(c3.continuation, userId, broker);
+        summary.continued++;
+        if (c3.continuation.flipRemainder) {
+          try {
+            await persistOne(c3.continuation.flipRemainder, userId, broker);
+            summary.imported++;
+          } catch (err) {
+            summary.warnings.push({
+              symbol: item.trade.symbol,
+              message: `flip remainder failed: ${(err as Error).message}`,
+            });
+          }
+        }
+      } catch (err) {
+        summary.failed++;
+        summary.errors.push({
+          symbol: item.trade.symbol,
+          message: `continuation failed: ${(err as Error).message} — delete the trade and re-import to retry`,
+        });
+      }
+      continue;
+    }
+    // "new"
     try {
       await persistOne(item.trade, userId, broker);
       summary.imported++;
@@ -108,7 +153,6 @@ async function persistOne(
   broker: string,
 ): Promise<void> {
   const external_ref = await hashFillIds(t.fillTradeIds);
-  // status from C1: 'closed' | 'open'. Compute partial here for completeness.
   const exitsQty = t.exits.reduce((a, e) => a + e.quantity, 0);
   let status: "open" | "partial" | "closed";
   if (exitsQty <= 0) status = "open";
