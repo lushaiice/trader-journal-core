@@ -232,6 +232,36 @@ export type Database = {
         }
         Relationships: []
       }
+      playbooks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          rules: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          rules?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          rules?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolios: {
         Row: {
           base_capital: number | null
@@ -536,6 +566,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "trades_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "trades_portfolio_id_fkey"
             columns: ["portfolio_id"]
