@@ -106,7 +106,35 @@ function Trades() {
         }
       />
 
+      {needsReflectionCount > 0 && (
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => setNeedsReflection((v) => !v)}
+            className={
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors " +
+              (needsReflection
+                ? "bg-primary/10 border-primary/40 text-foreground"
+                : "border-border text-muted-foreground hover:text-foreground")
+            }
+          >
+            Needs reflection
+            <span className="tabular-nums">({needsReflectionCount})</span>
+          </button>
+          {needsReflection && (
+            <button
+              type="button"
+              onClick={() => setNeedsReflection(false)}
+              className="text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              clear
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="surface-card p-3 md:p-4 mb-4 grid gap-2 md:grid-cols-[1fr_auto_auto_auto_auto]">
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
