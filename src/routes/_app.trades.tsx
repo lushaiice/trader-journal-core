@@ -29,6 +29,7 @@ import { TradeCard } from "@/components/trades/trade-card";
 import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
 import { useTradesQuery, useBulkDeleteTrades, useDeleteAllTrades } from "@/lib/trades/api";
 import { netPnl } from "@/lib/trades/calculations";
+import { downloadTradesCsv } from "@/lib/trades/export-csv";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/trades")({
