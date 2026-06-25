@@ -1,67 +1,60 @@
-## Why there's a gap today
 
-The Zerodha **Tradebook CSV** (the file you import) has no charges column. The Zerodha **P&L report** you're comparing against is *net of all charges* (brokerage, STT/CTT, exchange txn, GST, SEBI, stamp). The app currently inserts every imported trade with `brokerage = 0, taxes = 0, other_fees = 0`. That alone routinely creates 10–40% gaps on F&O and 1–3% gaps on equity.
+# Make realized P&L match the broker
 
-A second, structural gap: equity **orphan sells** (a sell with no prior buy in the imported window — i.e. you sold a pre-existing holding) are currently **dropped with a warning**. Their realized P&L therefore never enters the app, even though it shows up on the broker P&L.
+The Net P&L on the dashboard is **−₹89,399** while Zerodha's statement for the same period shows realized **−₹24,946**. The ₹64.5K gap is not a charges issue — every fee in our CSV is 0. It comes from five concrete bugs in how we reconstruct trades from the Zerodha tradebook.
 
-A third, smaller gap: **open positions** contribute zero to app "Net P&L" (correct — unrealized), but the broker P&L statement *can* include MTM for open F&O lots depending on which tab you read. We won't change this, just document it.
+## The five causes (sized against your actual data)
 
-Since you're not sure which direction the gap leans, step 1 is a reconciliation tool that tells us — then we fix the dominant cause first.
+1. **Per-position closing instead of per-lot FIFO (~₹17K).**
+   Our aggregator only books realized P&L when a symbol's net quantity returns to zero. Brokers (and Zerodha's tax statement) book realized P&L on **every sell**, matched FIFO against the oldest unsold buy lots, even while the overall position stays open.
+   Effect today: METALIETF (+₹9,808) and PHARMABEES (+₹7,237) show 0 P&L for us because they're still partially open; broker has already realized profit on the portions sold.
 
-## Plan
+2. **MTF / `-BL` series merged into the main symbol (~₹0 net, but distorts every per-symbol view).**
+   Zerodha tags margin-funded buys with the `-BL` series and treats `AXISBANK-BL` as a different security from `AXISBANK` for FIFO purposes. We uppercase and merge them, so a buy under `-BL` gets matched against a regular sell (or vice versa), producing wrong cost basis on both sides.
+   Visible in: AXISBANK / AXISBANK-BL, HINDUNILVR / HINDUNILVR-BL, SUNPHARMA, ASIANPAINT, LT, TITAN.
 
-### 1. Per-symbol reconciliation report (diagnose first)
+3. **Corporate actions not applied (~₹14K).**
+   Bonuses, splits, demergers and rights change the broker's cost basis and quantity automatically; the tradebook doesn't carry those adjustments. So a sell of a post-bonus quantity is matched against a pre-bonus higher per-share price on our side.
+   Visible in: TATAINVEST (−₹7,479 diff), ADANIPOWER (−₹6,166), PIDILITIND (−₹4,093), BEML (−₹3,675).
 
-Add a small in-app page **`/import/reconcile`** that:
+4. **Pre-import opening positions missing (~₹26K, MCX alone).**
+   Anything bought before the first tradebook in our system has no cost basis. The first sell of such a holding either gets dropped as an `orphan_sell` warning or — if a later buy of the same symbol exists — paired against that newer (higher) buy. MCX is the loudest case: broker +₹2,935, ours −₹23,110.
 
-- Lets you paste / upload the Zerodha **P&L CSV** (Equity and/or F&O — same Console export you're comparing against).
-- Parses it (symbol, realized P&L, charges breakdown if present).
-- Joins per-symbol against the app's realized Net P&L for the same date range.
-- Renders a table: `symbol | broker_pnl | app_pnl | diff | likely_cause` where `likely_cause` is inferred from:
-  - `app = 0 && broker ≠ 0` → orphan-sell skip
-  - `|diff| ≈ broker_charges` → charges missing (the fix below)
-  - `app sign ≠ broker sign` → side / flip bug worth inspecting
-  - otherwise → "investigate"
+5. **Open trades excluded from realized totals (cosmetic but confusing).**
+   Trades flagged "open" contribute 0 to Net P&L even when they have realized portions (because of #1). After #1 is fixed, "open" trades will correctly show a non-zero realized P&L for their already-sold quantity.
 
-This gives a deterministic answer to "where is the money?" without guessing.
+## What I'll build
 
-### 2. Import charges from the Zerodha P&L CSV
+### Phase 1 — Per-lot FIFO realized P&L (biggest single win)
+Rewrite `src/lib/trades/import/aggregate.ts` to keep a FIFO queue of open buy lots per (symbol, series, instrument_type) and crystallize a realized exit on every sell, regardless of whether net position reaches zero. Each crystallized exit becomes a `trade_exits` row tied to the originating buy lot.
 
-The Tradebook does **not** carry charges, but the Zerodha Console **P&L** export does (per-symbol total charges, or per-trade in the detailed export). New flow:
+Two presentational changes follow:
+- A trade's `status` becomes `closed` only when its entire entry quantity is exited (matches today); but `gross_pnl` for an open trade now includes realized P&L on already-sold portions.
+- The dashboard's Net P&L sums realized P&L across **all** trades (open + closed), not just closed.
 
-- Extend the import wizard with an **optional second file**: "Charges & taxes (Zerodha P&L export)".
-- Parse it and, per symbol + date range, allocate charges to imported trades pro-rata by **gross P&L magnitude** (or by **notional traded value** when gross is 0). Persist into the existing `trades.brokerage / taxes / other_fees` columns (we'll map: brokerage → brokerage; STT/CTT/exchange/SEBI/stamp → taxes; GST → other_fees).
-- If charges file is not provided, show a calm banner on `/analytics` that "Net P&L excludes broker charges — import the Zerodha P&L file on /import to include them."
+Migration: re-run import on existing `csv_import` trades; manual trades untouched.
 
-### 3. Stop silently dropping orphan equity sells
+### Phase 2 — Series-aware symbol key
+Preserve the Zerodha `series` (`EQ`, `BL`, `BE`, `BZ`, `IL`) on the `Fill` and on the trade row, and key the FIFO state on `(symbol, series)` instead of `symbol` alone. Display name stays the bare symbol; FIFO and dedup respect the series.
 
-Today an equity sell with no prior buy in the window is just a warning. Change behaviour:
+### Phase 3 — Pre-import opening balances
+Add a one-time "starting holdings" CSV importer (symbol, qty, avg cost, acquisition date) that seeds the FIFO queue before the tradebook is applied. Wired into `/import` as an optional first step. Replaces the current `orphan_sell` warning path for those symbols.
 
-- Surface every `orphan_sell` row in the import **preview** with a one-click action: **"Treat as closing pre-existing holding"** → opens a tiny inline editor (entry price + entry date) to seed the position, then the sell is matched against it and a closed trade is created.
-- Optional "Skip" stays available for genuinely irrelevant rows.
-- No automatic fabrication — the trader supplies the cost basis, which is the only honest source for pre-window holdings.
+### Phase 4 — Corporate-action adjustments
+New `corporate_actions` table (`symbol, ex_date, action_type, ratio_from, ratio_to, notes`). The FIFO replay reads it and rewrites lot quantity + cost basis at the ex-date. Seed with a manual entry UI on the trade row — no auto-fetch yet. Covers splits, bonuses, and consolidations; demergers and rights stay manual.
 
-### 4. Lock down the rest
+### Phase 5 — Reconciliation report
+A `/import/reconcile` view that diffs our per-symbol realized P&L against the uploaded Zerodha P&L XLSX and lists the rows that still disagree, with the suspected cause (corporate action / opening position / series mismatch / charges). Confirms phases 1–4 worked and surfaces the long tail.
 
-- Add a unit-test fixture pair (Tradebook + matching P&L CSV) and assert per-symbol Net P&L equals broker Net P&L to within ₹0.01 after the charges allocation.
-- Add a dev-only sanity check in `scripts/diagnose-import.ts` that prints app-vs-broker per-symbol diffs when both files are supplied.
+## Out of scope for this plan
 
-### Out of scope (called out so we don't conflate)
+- Live LTP + unrealized P&L tile (separate work the user already deferred).
+- Other Credit & Debit lines (dividends, DP charges, MTF interest, AMC, buyback) — needs the funds ledger, not the tradebook.
+- Auto-fetching corporate actions from NSE/BSE (manual seed first; auto-fetch later if useful).
+- Currency / commodity segments (still intentionally skipped).
 
-- MTM on still-open F&O positions (the app correctly excludes; broker "P&L" tab sometimes includes).
-- FIFO matching against a holdings file (we'll use the user-supplied cost basis for orphan sells instead — simpler and equally correct for reconciliation).
+## Suggested order
 
-## Technical notes
+Build Phase 1 first and re-measure against the Zerodha XLSX — that alone should pull the gap from ~₹64K down to ~₹40K. Then Phase 2 (cheap, removes noise on every per-symbol view). Then Phase 4 + 3 in either order. Phase 5 is the closing verification.
 
-- New parser: `src/lib/trades/import/zerodha-pnl.ts` (CSV header detection + per-symbol charges aggregation).
-- New service: `src/lib/trades/import/allocate-charges.ts` (pure: `(trades, chargesBySymbol) → updates`).
-- New route: `src/routes/_app.import.reconcile.tsx`.
-- Wizard change: `src/routes/_app.import.tsx` adds an optional second dropzone + preview of allocated charges.
-- Aggregator change in `aggregate.ts`: orphan sells become a typed `pendingOrphan` item carried into the preview rather than discarded; preview UI lets the user resolve each.
-- DB: no schema change — `brokerage/taxes/other_fees` columns already exist on `trades`.
-
-## What you'll see after the change
-
-- A reconciliation page that tells you, per symbol, how big the gap is and why.
-- An import flow where uploading the P&L CSV makes app Net P&L match the broker statement to the rupee for closed trades.
-- Orphan sells become resolvable instead of silently dropped.
+Tell me to start with Phase 1, or to bundle Phases 1 + 2 in one pass.
