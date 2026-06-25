@@ -128,4 +128,19 @@ describe("parseZerodhaTradebook", () => {
     expect(res.fills).toHaveLength(0);
     expect(res.warnings.some((w) => w.code === "bad_row")).toBe(true);
   });
+
+  it("suffixes non-EQ equity series so AXISBANK-BL stays distinct from AXISBANK", () => {
+    const csv =
+      HEADER +
+      "\nAXISBANK,IN,2025-10-01,NSE,EQ,EQ,buy,,1,1000,T1,O1,2025-10-01T09:30:00" +
+      "\nAXISBANK,IN,2025-10-02,NSE,EQ,BL,buy,,1,1050,T2,O2,2025-10-02T09:30:00" +
+      "\nIDFCFIRSTB,IN,2025-10-03,NSE,EQ,BE,buy,,1,80,T3,O3,2025-10-03T09:30:00\n";
+    const res = parseZerodhaTradebook(csv);
+    expect(res.fills.map((f) => f.symbol)).toEqual([
+      "AXISBANK",
+      "AXISBANK-BL",
+      "IDFCFIRSTB-BE",
+    ]);
+  });
 });
+
