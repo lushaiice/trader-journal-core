@@ -116,7 +116,7 @@ describe("aggregateFills", () => {
     expect(warnings.some((w) => w.code === "open_position")).toBe(true);
   });
 
-  it("flip through zero produces two trades + warning", () => {
+  it("equity flip-through-zero closes the long and warns the remainder (no phantom short)", () => {
     const fills = [
       mkFill({ side: "buy", quantity: 10, price: 100 }),
       mkFill({ side: "sell", quantity: 15, price: 110 }),
@@ -128,9 +128,23 @@ describe("aggregateFills", () => {
     expect(trades[0].status).toBe("closed");
     expect(trades[0].quantity).toBe(10);
     expect(trades[0].exits[0].quantity).toBe(10);
-    expect(trades[1].side).toBe("short");
-    expect(trades[1].status).toBe("closed");
+    // Remainder of the oversized sell becomes an orphan_sell, not a short.
+    expect(warnings.some((w) => w.code === "orphan_sell")).toBe(true);
+    // The trailing buy opens a new long that remains open.
+    expect(trades[1].side).toBe("long");
+    expect(trades[1].status).toBe("open");
     expect(trades[1].quantity).toBe(5);
+  });
+
+  it("futures flip through zero still produces two trades + position_flip warning", () => {
+    const fills = [
+      mkFill({ side: "buy", quantity: 10, price: 100, symbol: "NIFTY25OCTFUT" }),
+      mkFill({ side: "sell", quantity: 15, price: 110, symbol: "NIFTY25OCTFUT" }),
+      mkFill({ side: "buy", quantity: 5, price: 105, symbol: "NIFTY25OCTFUT" }),
+    ].map((f) => ({ ...f, instrumentType: "futures" as const, segment: "FO" }));
+    const { trades, warnings } = aggregateFills(fills);
+    expect(trades.length).toBe(2);
+    expect(trades[1].side).toBe("short");
     expect(warnings.some((w) => w.code === "position_flip")).toBe(true);
   });
 
