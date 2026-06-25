@@ -172,6 +172,10 @@ export interface AggregateOutput {
 
 export interface AggregateOptions {
   seedPositions?: SeedPosition[];
+  /** Phase 3 — pre-import holdings injected as synthetic opening buys. */
+  openingPositions?: OpeningPosition[];
+  /** Phase 4 — splits / bonuses / consolidations applied to pre-CA fills. */
+  corporateActions?: CorporateAction[];
 }
 
 export function aggregateFills(
@@ -187,12 +191,22 @@ export function aggregateFills(
     seedsBySymbol.set(s.symbol, s);
   }
 
+  // Phase 3 + 4: build the effective fill stream.
+  // Skip opening fills for symbols that already have a continuation seed —
+  // the seed's openLots already represent the pre-existing basis.
+  const openings = (options.openingPositions ?? []).filter(
+    (o) => !seedsBySymbol.has(o.symbol),
+  );
+  const merged = [...buildOpeningFills(openings), ...fills];
+  const effective = applyCorporateActions(merged, options.corporateActions ?? []);
+
   // Group by symbol (Phase 2: parser has already suffixed non-EQ series).
   const bySymbol = new Map<string, Fill[]>();
-  for (const f of fills) {
+  for (const f of effective) {
     if (!bySymbol.has(f.symbol)) bySymbol.set(f.symbol, []);
     bySymbol.get(f.symbol)!.push(f);
   }
+
 
   const symbols = Array.from(bySymbol.keys()).sort();
 
