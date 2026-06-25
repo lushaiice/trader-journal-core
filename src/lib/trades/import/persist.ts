@@ -66,6 +66,67 @@ export async function loadExistingFillIds(
 }
 
 /**
+ * Replace mode: delete prior CSV-imported trades for this user + broker so the
+ * incoming file becomes the authoritative history. Manual trades
+ * (source IS NULL / not 'csv_import') are NEVER touched.
+ *
+ * Scope: trades whose id appears in broker_fills for this (user, broker).
+ * Returns the number of trades removed.
+ */
+export async function replaceImportedTrades(
+  userId: string,
+  broker = "zerodha",
+): Promise<number> {
+  // Find every trade_id this broker has previously claimed for the user.
+  const { data: fillRows, error: fErr } = await supabase
+    .from("broker_fills")
+    .select("imported_trade_id")
+    .eq("user_id", userId)
+    .eq("broker", broker)
+    .not("imported_trade_id", "is", null);
+  if (fErr) throw fErr;
+
+  const tradeIds = Array.from(
+    new Set(
+      (fillRows ?? [])
+        .map((r) => r.imported_trade_id as string | null)
+        .filter((id): id is string => !!id),
+    ),
+  );
+
+  // Always wipe this broker's dedup ledger so a fresh re-import can re-claim
+  // the same broker_trade_ids, even if no trades were linked.
+  const { error: delFillsErr } = await supabase
+    .from("broker_fills")
+    .delete()
+    .eq("user_id", userId)
+    .eq("broker", broker);
+  if (delFillsErr) throw delFillsErr;
+
+  if (tradeIds.length === 0) return 0;
+
+  // Safety net: only delete trades that are CSV-imported AND owned by this user.
+  // (Defense-in-depth — RLS already enforces ownership.)
+  const chunkSize = 100;
+  let removed = 0;
+  for (let i = 0; i < tradeIds.length; i += chunkSize) {
+    const chunk = tradeIds.slice(i, i + chunkSize);
+    await supabase.from("trade_exits").delete().in("trade_id", chunk);
+    await supabase.from("discipline_logs").delete().in("trade_id", chunk);
+    const { data: deleted, error } = await supabase
+      .from("trades")
+      .delete()
+      .in("id", chunk)
+      .eq("user_id", userId)
+      .eq("source", "csv_import")
+      .select("id");
+    if (error) throw error;
+    removed += deleted?.length ?? 0;
+  }
+  return removed;
+}
+
+/**
  * Persist a C3-classified import:
  *   - "new"          → INSERT a fresh trade (existing C2 path).
  *   - "continuation" → applyContinuation on the existing open trade, then
@@ -175,7 +236,8 @@ async function persistOne(
       brokerage: t.brokerage ?? 0,
       taxes: t.taxes ?? 0,
       other_fees: t.other_fees ?? 0,
-      tags: [],
+      tags: ["Imported"],
+      notes: "Imported from Zerodha tradebook",
       source: "csv_import",
       external_ref,
       status,

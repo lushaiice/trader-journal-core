@@ -64,6 +64,24 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
+/** Segments Zerodha emits that this importer intentionally does not support
+ *  (currency derivatives, commodities). Reported as a counted skip, not an error. */
+const UNSUPPORTED_SEGMENTS = new Set([
+  "CDS",
+  "CD",
+  "BCD",
+  "MCX",
+  "COM",
+  "COMM",
+  "NCDEX",
+  "NCO",
+  "BCO",
+]);
+
+export function isUnsupportedSegment(segment: string): boolean {
+  return UNSUPPORTED_SEGMENTS.has(segment.toUpperCase());
+}
+
 export function inferInstrumentType(
   symbol: string,
   segment: string,
@@ -248,12 +266,21 @@ export function parseZerodhaTradebook(csvText: string): ParseOutput {
 
     const instrumentType = inferInstrumentType(symbol, segment);
     if (!instrumentType) {
-      warnings.push({
-        code: "unknown_segment",
-        message: `Cannot infer instrument type for segment=${segment} symbol=${symbol}`,
-        symbol,
-        rowRef,
-      });
+      if (isUnsupportedSegment(segment)) {
+        warnings.push({
+          code: "unsupported_segment",
+          message: `Unsupported segment ${segment} (only equity, futures, and options are imported)`,
+          symbol,
+          rowRef,
+        });
+      } else {
+        warnings.push({
+          code: "unknown_segment",
+          message: `Cannot infer instrument type for segment=${segment} symbol=${symbol}`,
+          symbol,
+          rowRef,
+        });
+      }
       rowsSkipped++;
       continue;
     }

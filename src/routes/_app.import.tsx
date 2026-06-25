@@ -10,6 +10,18 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
   Table,
   TableBody,
   TableCell,
@@ -22,6 +34,7 @@ import { importZerodhaTradebook, parseZerodhaTradebook } from "@/lib/trades/impo
 import {
   loadExistingFillIds,
   persistImportedTrades,
+  replaceImportedTrades,
   type PersistSummary,
 } from "@/lib/trades/import/persist";
 import {
@@ -86,6 +99,8 @@ function ImportPage() {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [summary, setSummary] = useState<PersistSummary | null>(null);
+  const [replaceMode, setReplaceMode] = useState(false);
+  const [confirmReplace, setConfirmReplace] = useState(false);
 
   const handleFile = async (file: File) => {
     if (!user) {
@@ -190,6 +205,21 @@ function ImportPage() {
   const confirm = useMutation({
     mutationFn: async () => {
       if (!preview || !user) throw new Error("No preview");
+      let replacedCount = 0;
+      if (replaceMode) {
+        replacedCount = await replaceImportedTrades(user.id);
+        // After wiping prior CSV imports + the broker dedup ledger, every
+        // selected trade in the preview is effectively NEW. Skip continuation
+        // and dedup classifications because they referenced state we just
+        // deleted.
+        const fresh: ClassifiedTradeC3[] = preview.result.trades.map((trade) => ({
+          trade,
+          classification: "new" as const,
+          matchedFillIds: [],
+        }));
+        const s = await persistImportedTrades(fresh, user.id);
+        return { summary: s, replacedCount };
+      }
       const actionable: ClassifiedTradeC3[] = preview.classified.map((c, i) => {
         const importable =
           c.classification === "new" || c.classification === "continuation";
@@ -199,15 +229,21 @@ function ImportPage() {
         return c;
       });
       const s = await persistImportedTrades(actionable, user.id);
-      return s;
+      return { summary: s, replacedCount };
     },
-    onSuccess: (s) => {
+    onSuccess: ({ summary: s, replacedCount }) => {
       setSummary(s);
       qc.invalidateQueries({ queryKey: ["trades"] });
       const total = s.imported + s.continued;
-      toast.success(
-        `Imported ${s.imported} new + ${s.continued} continued (${total} total)`,
-      );
+      if (replacedCount > 0) {
+        toast.success(
+          `Replaced ${replacedCount} prior import${replacedCount === 1 ? "" : "s"} · imported ${total} trade${total === 1 ? "" : "s"}`,
+        );
+      } else {
+        toast.success(
+          `Imported ${s.imported} new + ${s.continued} continued (${total} total)`,
+        );
+      }
     },
     onError: (err) => {
       toast.error("Import failed", { description: (err as Error).message });
@@ -269,6 +305,8 @@ function ImportPage() {
       {preview && !summary && (
         <PreviewView
           preview={preview}
+          replaceMode={replaceMode}
+          onReplaceModeChange={setReplaceMode}
           onToggle={(i) => {
             const next = new Set(preview.selected);
             if (next.has(i)) next.delete(i);
@@ -278,7 +316,13 @@ function ImportPage() {
           onChargesFile={handleChargesFile}
           onClearCharges={clearCharges}
           onCancel={reset}
-          onConfirm={() => confirm.mutate()}
+          onConfirm={() => {
+            if (replaceMode) {
+              setConfirmReplace(true);
+            } else {
+              confirm.mutate();
+            }
+          }}
           busy={confirm.isPending || busy}
         />
       )}
@@ -286,12 +330,40 @@ function ImportPage() {
       {summary && (
         <SummaryView summary={summary} onDone={reset} />
       )}
+
+      <AlertDialog open={confirmReplace} onOpenChange={setConfirmReplace}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace all imported trades?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This deletes every trade previously imported from Zerodha (along with
+              their exits and discipline logs), then imports this file fresh.
+              Trades you added manually will <strong>not</strong> be touched.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setConfirmReplace(false);
+                confirm.mutate();
+              }}
+            >
+              Replace and import
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
 
 function PreviewView({
   preview,
+  replaceMode,
+  onReplaceModeChange,
   onToggle,
   onChargesFile,
   onClearCharges,
@@ -300,6 +372,8 @@ function PreviewView({
   busy,
 }: {
   preview: PreviewState;
+  replaceMode: boolean;
+  onReplaceModeChange: (v: boolean) => void;
   onToggle: (i: number) => void;
   onChargesFile: (f: File) => void;
   onClearCharges: () => void;
@@ -317,6 +391,10 @@ function PreviewView({
 
   const selectedCount = preview.selected.size;
   const orphanSells = preview.result.warnings.filter((w) => w.code === "orphan_sell");
+  const unsupportedCount = preview.result.warnings.filter(
+    (w) => w.code === "unsupported_segment",
+  ).length;
+  const importCount = replaceMode ? preview.result.trades.length : selectedCount;
 
   return (
     <>
@@ -339,7 +417,29 @@ function PreviewView({
           {counts.ambiguous > 0 && (
             <Badge variant="outline">{counts.ambiguous} ambiguous</Badge>
           )}
+          {unsupportedCount > 0 && (
+            <Badge variant="outline">{unsupportedCount} unsupported skipped</Badge>
+          )}
         </div>
+      </div>
+
+      <div className="surface-card p-4 mb-3 flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <Label htmlFor="replace-mode" className="text-sm font-medium cursor-pointer">
+            Replace full transaction history
+          </Label>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Wipe every previously-imported Zerodha trade and re-import from this file.
+            Manual trades are never deleted. Dedup and continuation are skipped — every
+            reconstructed trade is imported fresh.
+          </p>
+        </div>
+        <Switch
+          id="replace-mode"
+          checked={replaceMode}
+          onCheckedChange={onReplaceModeChange}
+          disabled={busy}
+        />
       </div>
 
       {/* Step 2 — Charges file */}
@@ -553,9 +653,11 @@ function PreviewView({
         <Button variant="outline" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
-        <Button onClick={onConfirm} disabled={busy || selectedCount === 0}>
+        <Button onClick={onConfirm} disabled={busy || importCount === 0}>
           {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Import {selectedCount} trade{selectedCount === 1 ? "" : "s"}
+          {replaceMode
+            ? `Replace history with ${importCount} trade${importCount === 1 ? "" : "s"}`
+            : `Import ${importCount} trade${importCount === 1 ? "" : "s"}`}
         </Button>
       </div>
     </>

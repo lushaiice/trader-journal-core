@@ -50,6 +50,7 @@ export interface ReconstructedTrade {
 export interface ImportWarning {
   code:
     | "unknown_segment"
+    | "unsupported_segment"
     | "bad_row"
     | "open_position"
     | "position_flip"
@@ -57,6 +58,7 @@ export interface ImportWarning {
     | "added_to_position"
     | "out_of_order_fill"
     | "ambiguous_continuation"
+    | "orphan_sell"
     | string;
   message: string;
   symbol?: string;
