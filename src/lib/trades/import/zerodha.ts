@@ -338,8 +338,18 @@ export function parseZerodhaTradebook(csvText: string): ParseOutput {
 
     const entryTimeHHMMSS = execTimePart.slice(0, 8);
 
+    // Phase 2: series-aware symbol key. Zerodha treats non-EQ series
+    // (BL = margin/BTST, BE/BZ = trade-to-trade) as separate securities for
+    // FIFO matching. Reflect that by suffixing the symbol so the aggregator
+    // never merges, say, AXISBANK and AXISBANK-BL.
+    const seriesUp = series.toUpperCase();
+    const effectiveSymbol =
+      instrumentType === "equity" && seriesUp && seriesUp !== "EQ"
+        ? `${symbol}-${seriesUp}`
+        : symbol;
+
     fills.push({
-      symbol,
+      symbol: effectiveSymbol,
       instrumentType,
       side: tradeType,
       quantity: qty,
@@ -354,6 +364,7 @@ export function parseZerodhaTradebook(csvText: string): ParseOutput {
       series,
       expiryDate: normExpiryDate,
     });
+
   }
 
   return { fills, warnings, rowsParsed: dataRows.length, rowsSkipped };

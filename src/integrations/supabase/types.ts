@@ -442,6 +442,7 @@ export type Database = {
         Row: {
           broker_trade_id: string | null
           created_at: string
+          entry_price: number | null
           exit_date: string
           exit_price: number
           fees: number | null
@@ -454,6 +455,7 @@ export type Database = {
         Insert: {
           broker_trade_id?: string | null
           created_at?: string
+          entry_price?: number | null
           exit_date?: string
           exit_price: number
           fees?: number | null
@@ -466,6 +468,7 @@ export type Database = {
         Update: {
           broker_trade_id?: string | null
           created_at?: string
+          entry_price?: number | null
           exit_date?: string
           exit_price?: number
           fees?: number | null

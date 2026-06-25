@@ -31,10 +31,13 @@ export interface AllocationResult {
 function grossOf(t: ReconstructedTrade): number {
   const sign = t.side === "long" ? 1 : -1;
   return t.exits.reduce(
-    (acc, e) => acc + (e.exit_price - t.entry_price) * e.quantity * sign,
+    (acc, e) =>
+      acc +
+      (e.exit_price - (e.entry_price ?? t.entry_price)) * e.quantity * sign,
     0,
   );
 }
+
 
 function notionalOf(t: ReconstructedTrade): number {
   return Math.abs(t.entry_price * t.quantity);

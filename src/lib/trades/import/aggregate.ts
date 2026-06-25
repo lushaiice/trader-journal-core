@@ -12,25 +12,34 @@ interface SplitFill extends Fill {
   // logical quantity to apply (may be a split portion of original fill)
 }
 
+/** A single open buy/sell lot in the FIFO queue (per-lot cost basis). */
+interface OpenLot {
+  qty: number; // remaining unmatched
+  price: number; // cost basis (entry price for this lot)
+}
+
 interface InProgress {
   symbol: string;
   instrument_type: Fill["instrumentType"];
   openingSide: FillSide; // 'buy' for long, 'sell' for short
   entries: SplitFill[];
-  exits: SplitFill[];
+  exits: ReconstructedExit[];
   fillTradeIds: string[];
-  position: number; // signed running quantity
+  /** FIFO queue of unmatched entry lots (cost basis preserved per slice). */
+  openLots: OpenLot[];
+  /** Net signed quantity still open (long=+, short=-). */
+  position: number;
 }
 
 interface SeededState {
   seed: SeedPosition;
-  // Synthetic entry row representing the EXISTING weighted-avg entry already in the DB.
   existingEntryQty: number;
   existingEntryPrice: number;
-  addedEntries: SplitFill[]; // new same-side fills appended to entry
-  addedExits: SplitFill[]; // new opposite-side fills (closing/reducing)
+  addedEntries: SplitFill[];
+  addedExits: Continuation["newExits"];
   addedFillTradeIds: string[];
-  position: number; // signed net open quantity (long=+ short=-)
+  openLots: OpenLot[];
+  position: number;
   warnings: string[];
   flipRemainder: ReconstructedTrade | null;
 }
@@ -42,63 +51,23 @@ function weightedAvg(items: { price: number; quantity: number }[]): number {
   return sum / totalQty;
 }
 
-function aggregateExitsByOrder(exits: SplitFill[]): ReconstructedExit[] {
-  const map = new Map<string, SplitFill[]>();
-  const order: string[] = [];
-  for (const f of exits) {
-    if (!map.has(f.orderId)) {
-      map.set(f.orderId, []);
-      order.push(f.orderId);
-    }
-    map.get(f.orderId)!.push(f);
+/**
+ * Consume `qty` from the FIFO queue of open lots and return an array of
+ * (qty, basis) slices in match order. Caller composes ReconstructedExits
+ * by attaching exit_price/date/time from the closing fill.
+ */
+function popFifo(queue: OpenLot[], qty: number): { qty: number; basis: number }[] {
+  const out: { qty: number; basis: number }[] = [];
+  let remaining = qty;
+  while (remaining > 0 && queue.length > 0) {
+    const head = queue[0];
+    const take = Math.min(head.qty, remaining);
+    out.push({ qty: take, basis: head.price });
+    head.qty -= take;
+    remaining -= take;
+    if (head.qty <= 0) queue.shift();
   }
-  return order.map((oid) => {
-    const group = map.get(oid)!;
-    const qty = group.reduce((a, b) => a + b.quantity, 0);
-    const price = weightedAvg(group);
-    const earliest = group.reduce((a, b) =>
-      a.executedAt.getTime() <= b.executedAt.getTime() ? a : b,
-    );
-    return {
-      exit_price: price,
-      quantity: qty,
-      exit_date: earliest.tradeDate,
-      exit_time: earliest.entryTimeHHMMSS,
-    };
-  });
-}
-
-/** Like aggregateExitsByOrder but preserves a single broker_trade_id per group
- *  (used by the continuation path so each exit row can carry a broker_trade_id
- *  for idempotent re-insert). Groups with multiple fills get the earliest
- *  fill's broker_trade_id as the representative id. */
-function aggregateExitsForContinuation(
-  exits: SplitFill[],
-): Continuation["newExits"] {
-  const map = new Map<string, SplitFill[]>();
-  const order: string[] = [];
-  for (const f of exits) {
-    if (!map.has(f.orderId)) {
-      map.set(f.orderId, []);
-      order.push(f.orderId);
-    }
-    map.get(f.orderId)!.push(f);
-  }
-  return order.map((oid) => {
-    const group = map.get(oid)!;
-    const qty = group.reduce((a, b) => a + b.quantity, 0);
-    const price = weightedAvg(group);
-    const earliest = group.reduce((a, b) =>
-      a.executedAt.getTime() <= b.executedAt.getTime() ? a : b,
-    );
-    return {
-      exitPrice: price,
-      quantity: qty,
-      exitDate: earliest.tradeDate,
-      exitTime: earliest.entryTimeHHMMSS,
-      brokerTradeId: earliest.tradeId,
-    };
-  });
+  return out;
 }
 
 function finalize(ip: InProgress): ReconstructedTrade {
@@ -120,7 +89,9 @@ function finalize(ip: InProgress): ReconstructedTrade {
     entry_time: earliestEntry.entryTimeHHMMSS,
     entry_price: entryPrice,
     quantity: entryQty,
-    exits: status === "open" ? [] : aggregateExitsByOrder(ip.exits),
+    // Exits are emitted incrementally during processing (per-lot FIFO),
+    // including partial exits for open positions.
+    exits: ip.exits.slice(),
     brokerage: 0,
     taxes: 0,
     other_fees: 0,
@@ -154,7 +125,7 @@ export function aggregateFills(
     seedsBySymbol.set(s.symbol, s);
   }
 
-  // Group by symbol
+  // Group by symbol (Phase 2: parser has already suffixed non-EQ series).
   const bySymbol = new Map<string, Fill[]>();
   for (const f of fills) {
     if (!bySymbol.has(f.symbol)) bySymbol.set(f.symbol, []);
@@ -175,13 +146,10 @@ export function aggregateFills(
     if (seed) {
       const continuation = processSeeded(symbol, group, seed, warnings);
       continuations.set(symbol, continuation);
-      // flipRemainder is conveyed via the continuation struct so persistence
-      // can wire it after the existing trade closes. We do NOT also push it
-      // to `trades` — the caller persists it through the new-path.
       continue;
     }
 
-    // Fresh aggregation (C1 behavior)
+    // Fresh aggregation with per-lot FIFO.
     let current: InProgress | null = null;
 
     const openWith = (f: SplitFill): InProgress => ({
@@ -191,6 +159,7 @@ export function aggregateFills(
       entries: [f],
       exits: [],
       fillTradeIds: [f.tradeId],
+      openLots: [{ qty: f.quantity, price: f.price }],
       position: f.side === "buy" ? f.quantity : -f.quantity,
     });
 
@@ -201,9 +170,8 @@ export function aggregateFills(
         const slice: SplitFill = { ...fill, quantity: remaining };
 
         if (current === null) {
-          // For equity, only a BUY may open a new lot. A standalone sell most
-          // likely closes a position held before the imported window; never
-          // silently create a phantom short.
+          // Equity: only a BUY can open a new lot. Standalone sells most
+          // likely close holdings older than the imported window.
           if (slice.instrumentType === "equity" && slice.side === "sell") {
             warnings.push({
               code: "orphan_sell",
@@ -219,9 +187,6 @@ export function aggregateFills(
           break;
         }
 
-        const signed = slice.side === "buy" ? slice.quantity : -slice.quantity;
-        const newPos = current.position + signed;
-
         const sameDir =
           (current.openingSide === "buy" && slice.side === "buy") ||
           (current.openingSide === "sell" && slice.side === "sell");
@@ -229,37 +194,57 @@ export function aggregateFills(
         if (sameDir) {
           current.entries.push(slice);
           if (firstSlice) current.fillTradeIds.push(fill.tradeId);
-          current.position = newPos;
+          current.openLots.push({ qty: slice.quantity, price: slice.price });
+          current.position +=
+            slice.side === "buy" ? slice.quantity : -slice.quantity;
           remaining = 0;
         } else {
+          // Closing direction — consume FIFO open lots.
           const currentAbs = Math.abs(current.position);
-          if (slice.quantity <= currentAbs) {
-            current.exits.push(slice);
-            if (firstSlice) current.fillTradeIds.push(fill.tradeId);
-            current.position = newPos;
-            remaining = 0;
-            if (current.position === 0) {
-              trades.push(finalize(current));
-              current = null;
-            }
-          } else {
-            const closingQty = currentAbs;
-            const closingSlice: SplitFill = { ...fill, quantity: closingQty };
-            current.exits.push(closingSlice);
-            if (firstSlice) current.fillTradeIds.push(fill.tradeId);
-            current.position = 0;
+          const closeQty = Math.min(slice.quantity, currentAbs);
+          const matched = popFifo(current.openLots, closeQty);
+          for (const m of matched) {
+            current.exits.push({
+              exit_price: fill.price,
+              quantity: m.qty,
+              entry_price: m.basis,
+              exit_date: fill.tradeDate,
+              exit_time: fill.entryTimeHHMMSS,
+            });
+          }
+          if (firstSlice) current.fillTradeIds.push(fill.tradeId);
+          current.position +=
+            slice.side === "buy" ? closeQty : -closeQty;
+
+          if (current.position === 0) {
             trades.push(finalize(current));
             current = null;
+          }
 
+          const overSell = slice.quantity - closeQty;
+          if (overSell > 0) {
+            // For equity, never flip into a phantom short; warn and drop.
+            if (fill.instrumentType === "equity") {
+              warnings.push({
+                code: "orphan_sell",
+                message: `Sell exceeded open long quantity; remainder skipped (likely against pre-import holding)`,
+                symbol,
+                rowRef: fill.tradeId,
+              });
+              remaining = 0;
+              break;
+            }
+            // Futures/options may flip — open new opposite trade with remainder.
             warnings.push({
               code: "position_flip",
               message: `Fill crossed zero; split into close + new opposite trade`,
               symbol,
               rowRef: fill.tradeId,
             });
-
-            remaining = remaining - closingQty;
+            remaining = overSell;
             firstSlice = false;
+          } else {
+            remaining = 0;
           }
         }
       }
@@ -292,12 +277,18 @@ function processSeeded(
     addedEntries: [],
     addedExits: [],
     addedFillTradeIds: [],
+    // Seed the FIFO queue with the existing open quantity at the existing
+    // weighted-avg cost basis. (Per-lot basis for pre-existing lots isn't
+    // available from a seed; weighted-avg is the best approximation.)
+    openLots:
+      seed.openQuantity > 0
+        ? [{ qty: seed.openQuantity, price: seed.entryPrice }]
+        : [],
     position: seedSign * seed.openQuantity,
     warnings: [],
     flipRemainder: null,
   };
 
-  // Filter out out-of-order fills first (collect remainder for processing).
   const usable: Fill[] = [];
   for (const f of group) {
     if (f.executedAt.getTime() < seed.earliestEntryAt.getTime()) {
@@ -313,8 +304,6 @@ function processSeeded(
     usable.push(f);
   }
 
-  // remainderTrade: once the seeded position fully closes or flips, subsequent
-  // fills open a NEW reconstructed trade (becomes flipRemainder).
   let remainderIp: InProgress | null = null;
 
   const openRemainder = (f: SplitFill): InProgress => ({
@@ -324,6 +313,7 @@ function processSeeded(
     entries: [f],
     exits: [],
     fillTradeIds: [f.tradeId],
+    openLots: [{ qty: f.quantity, price: f.price }],
     position: f.side === "buy" ? f.quantity : -f.quantity,
   });
 
@@ -333,50 +323,66 @@ function processSeeded(
     while (remaining > 0) {
       const slice: SplitFill = { ...fill, quantity: remaining };
 
-      // If seeded position still alive, feed it.
-      if (state.position !== 0 || (state.addedEntries.length === 0 && state.addedExits.length === 0 && remainderIp === null)) {
-        // While seed-side is OPEN
-        if (state.position !== 0) {
-          const sliceSigned = slice.side === "buy" ? slice.quantity : -slice.quantity;
-          const sameDir =
-            (seed.side === "long" && slice.side === "buy") ||
-            (seed.side === "short" && slice.side === "sell");
+      // Seed-side alive?
+      if (state.position !== 0) {
+        const sameDir =
+          (seed.side === "long" && slice.side === "buy") ||
+          (seed.side === "short" && slice.side === "sell");
 
-          if (sameDir) {
-            state.addedEntries.push(slice);
-            if (firstSlice) state.addedFillTradeIds.push(fill.tradeId);
-            state.position += sliceSigned;
-            remaining = 0;
-          } else {
-            const openAbs = Math.abs(state.position);
-            if (slice.quantity <= openAbs) {
-              state.addedExits.push(slice);
-              if (firstSlice) state.addedFillTradeIds.push(fill.tradeId);
-              state.position += sliceSigned;
-              remaining = 0;
-            } else {
-              // Flip: close seeded with openAbs, push remainder into a new trade
-              const closingSlice: SplitFill = { ...fill, quantity: openAbs };
-              state.addedExits.push(closingSlice);
-              if (firstSlice) state.addedFillTradeIds.push(fill.tradeId);
-              state.position = 0;
-              warnings.push({
-                code: "position_flip",
-                message: `Fill closed seeded trade and opened opposite direction`,
-                symbol,
-                rowRef: fill.tradeId,
-              });
-              remaining = remaining - openAbs;
-              firstSlice = false;
-              // loop continues; next iteration falls into remainderIp branch
-            }
+        if (sameDir) {
+          state.addedEntries.push(slice);
+          if (firstSlice) state.addedFillTradeIds.push(fill.tradeId);
+          state.openLots.push({ qty: slice.quantity, price: slice.price });
+          state.position +=
+            slice.side === "buy" ? slice.quantity : -slice.quantity;
+          remaining = 0;
+        } else {
+          const openAbs = Math.abs(state.position);
+          const closeQty = Math.min(slice.quantity, openAbs);
+          const matched = popFifo(state.openLots, closeQty);
+          for (const m of matched) {
+            state.addedExits.push({
+              exitPrice: fill.price,
+              quantity: m.qty,
+              exitDate: fill.tradeDate,
+              exitTime: fill.entryTimeHHMMSS,
+              brokerTradeId: fill.tradeId,
+              entryPrice: m.basis,
+            });
           }
-          continue;
+          if (firstSlice) state.addedFillTradeIds.push(fill.tradeId);
+          state.position +=
+            slice.side === "buy" ? closeQty : -closeQty;
+
+          const over = slice.quantity - closeQty;
+          if (over > 0) {
+            warnings.push({
+              code: "position_flip",
+              message: `Fill closed seeded trade and opened opposite direction`,
+              symbol,
+              rowRef: fill.tradeId,
+            });
+            remaining = over;
+            firstSlice = false;
+          } else {
+            remaining = 0;
+          }
         }
+        continue;
       }
 
-      // Position is zero — anything left builds remainderIp
+      // Seed closed — anything left builds remainderIp
       if (remainderIp === null) {
+        if (slice.instrumentType === "equity" && slice.side === "sell") {
+          warnings.push({
+            code: "orphan_sell",
+            message: `Post-close sell with no open long; skipped`,
+            symbol,
+            rowRef: fill.tradeId,
+          });
+          remaining = 0;
+          break;
+        }
         remainderIp = openRemainder(slice);
         remaining = 0;
         continue;
@@ -385,37 +391,45 @@ function processSeeded(
       const sameDirRem =
         (remainderIp.openingSide === "buy" && slice.side === "buy") ||
         (remainderIp.openingSide === "sell" && slice.side === "sell");
-      const sliceSigned = slice.side === "buy" ? slice.quantity : -slice.quantity;
-      const newPos = remainderIp.position + sliceSigned;
 
       if (sameDirRem) {
         remainderIp.entries.push(slice);
         if (firstSlice) remainderIp.fillTradeIds.push(fill.tradeId);
-        remainderIp.position = newPos;
+        remainderIp.openLots.push({ qty: slice.quantity, price: slice.price });
+        remainderIp.position +=
+          slice.side === "buy" ? slice.quantity : -slice.quantity;
         remaining = 0;
       } else {
         const curAbs = Math.abs(remainderIp.position);
-        if (slice.quantity <= curAbs) {
-          remainderIp.exits.push(slice);
-          if (firstSlice) remainderIp.fillTradeIds.push(fill.tradeId);
-          remainderIp.position = newPos;
-          remaining = 0;
-        } else {
-          const closingSlice: SplitFill = { ...fill, quantity: curAbs };
-          remainderIp.exits.push(closingSlice);
-          if (firstSlice) remainderIp.fillTradeIds.push(fill.tradeId);
-          remainderIp.position = 0;
-          // finalize remainderIp into flipRemainder candidate slot…but a 2nd flip
-          // within a single continuation is exotic: just finalize the first one
-          // and ignore further flips here (warn).
+        const closeQty = Math.min(slice.quantity, curAbs);
+        const matched = popFifo(remainderIp.openLots, closeQty);
+        for (const m of matched) {
+          remainderIp.exits.push({
+            exit_price: fill.price,
+            quantity: m.qty,
+            entry_price: m.basis,
+            exit_date: fill.tradeDate,
+            exit_time: fill.entryTimeHHMMSS,
+          });
+        }
+        if (firstSlice) remainderIp.fillTradeIds.push(fill.tradeId);
+        remainderIp.position +=
+          slice.side === "buy" ? closeQty : -closeQty;
+
+        const over = slice.quantity - closeQty;
+        if (remainderIp.position === 0) {
           state.flipRemainder = finalize(remainderIp);
           remainderIp = null;
-          warnings.push({
-            code: "position_flip",
-            message: `Second flip within continuation; subsequent fills ignored`,
-            symbol,
-            rowRef: fill.tradeId,
-          });
+          if (over > 0) {
+            warnings.push({
+              code: "position_flip",
+              message: `Second flip within continuation; subsequent fills ignored`,
+              symbol,
+              rowRef: fill.tradeId,
+            });
+          }
+          remaining = 0;
+        } else {
           remaining = 0;
         }
       }
@@ -426,7 +440,6 @@ function processSeeded(
     state.flipRemainder = finalize(remainderIp);
   }
 
-  // Compute newEntryPrice / newQuantity (FACTUAL entry layer).
   const addedEntryQty = state.addedEntries.reduce((a, b) => a + b.quantity, 0);
   let newEntryPrice = state.existingEntryPrice;
   let newQuantity = state.existingEntryQty;
@@ -446,15 +459,12 @@ function processSeeded(
     });
   }
 
-  const newExits = aggregateExitsForContinuation(state.addedExits);
   const totalExitedAfter =
     (seed.entryQuantity - seed.openQuantity) +
-    newExits.reduce((a, e) => a + e.quantity, 0);
+    state.addedExits.reduce((a, e) => a + e.quantity, 0);
 
   let newStatus: "open" | "partial" | "closed";
-  if (state.position === 0 && state.flipRemainder !== null) {
-    newStatus = "closed";
-  } else if (state.position === 0) {
+  if (state.position === 0) {
     newStatus = "closed";
   } else if (totalExitedAfter > 0 && totalExitedAfter < newQuantity) {
     newStatus = "partial";
@@ -470,7 +480,7 @@ function processSeeded(
     addedFillTradeIds: [...state.addedFillTradeIds],
     newEntryPrice,
     newQuantity,
-    newExits,
+    newExits: state.addedExits,
     newStatus,
     flipRemainder: state.flipRemainder ?? undefined,
     warnings: [...new Set(state.warnings)],
