@@ -1,44 +1,45 @@
-## Schema groundwork for trades table
+## Problem
 
-Single migration + minimal code wiring. No UI, no importer, no playbook screens.
+Zerodha tradebooks now ship dates in `DD-MM-YYYY` format (e.g. `26-11-2025`, `order_execution_time = "26-11-2025T15:24:31"`). The parser in `src/lib/trades/import/zerodha.ts` passes these strings through untouched:
 
-### 1. Migration
+- `executedAt = new Date("26-11-2025T15:24:31Z")` → `Invalid Date` on some runtimes, or worse, silently misordered fills.
+- `tradeDate` / `entry_date` / `exit_date` are stored verbatim and forwarded to Postgres `date` columns, producing `date/time field value out of range: "26-11-2025"` on insert.
 
-Add four columns to `public.trades` and one partial unique index:
+Existing tests only cover the ISO `YYYY-MM-DD` shape, so regression slipped through.
 
-```sql
-ALTER TABLE public.trades
-  ADD COLUMN source text NOT NULL DEFAULT 'manual'
-    CHECK (source IN ('manual','csv_import','kite')),
-  ADD COLUMN external_ref text,
-  ADD COLUMN entry_time time without time zone,
-  ADD COLUMN playbook_id uuid;
+## Fix
 
-CREATE UNIQUE INDEX trades_user_external_ref_unique
-  ON public.trades (user_id, external_ref)
-  WHERE external_ref IS NOT NULL;
-```
+Single, contained change in the parser layer — no downstream logic touched.
 
-Existing rows backfill to `source='manual'` automatically via the column default. No RLS changes — existing owner-scoped policies cover the new columns. No FK on `playbook_id` (playbooks table doesn't exist yet).
+### 1. `src/lib/trades/import/zerodha.ts`
 
-### 2. Generated types
-
-`src/integrations/supabase/types.ts` regenerates after migration apply, exposing `source`, `external_ref`, `entry_time`, `playbook_id` on `trades` Row/Insert/Update.
-
-### 3. Form schema (`src/lib/trades/schema.ts`)
-
-Add only `playbook_id` to `tradeFormSchema`:
+Add a small helper:
 
 ```ts
-playbook_id: z.string().uuid().optional().nullable(),
+// Accepts "YYYY-MM-DD" or "DD-MM-YYYY"; returns ISO "YYYY-MM-DD" or null.
+function normalizeDate(raw: string): string | null
 ```
 
-`source`, `external_ref`, `entry_time` are server/importer-owned — not in the form.
+Apply it to:
+- `tradeDate` (used as `entry_date` / `exit_date` in aggregate).
+- `expiryDate` (when present).
+- The date portion of `order_execution_time` before constructing `executedAt`. The time portion (`HH:MM:SS`) is preserved as-is.
 
-### 4. API wiring (`src/lib/trades/api.ts`)
+If normalization fails, emit a `bad_row` warning and skip the row (same pattern already used for invalid timestamps).
 
-In `persistTrade`, include `playbook_id: values.playbook_id ?? null` in `tradePayload`. Do not set `source` — let the DB default to `'manual'`.
+### 2. Tests — `src/lib/trades/import/zerodha.test.ts`
 
-### Out of scope (later tasks)
+Add cases:
+- Parses `DD-MM-YYYY` `trade_date` + `order_execution_time` and stores ISO `YYYY-MM-DD` in `tradeDate`.
+- Parses `DD-MM-YYYY` `expiry_date`.
+- Mixed file (some rows ISO, some DD-MM-YYYY) round-trips correctly and orders fills chronologically.
+- Garbage date (`2025/13/40`) → `bad_row` warning, row skipped.
 
-Playbooks table + FK, CSV/Kite importer, entry_time population, any UI surfacing the new fields.
+### 3. No schema, no migration, no UI changes
+
+Aggregator, persistence, and continuation logic all stay the same — they already trust `tradeDate` to be ISO. Once the parser normalizes upstream, the Postgres insert error disappears.
+
+## Out of scope
+
+- Auto-detecting other broker formats.
+- Changing how `executedAt` handles timezones (still treated as IST wall clock, parsed as UTC for stable ordering).
