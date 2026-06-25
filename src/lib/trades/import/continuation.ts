@@ -92,7 +92,10 @@ export function classifyWithContinuation(
     bySymbol.get(t.symbol)!.push(t);
   }
 
-  const symbolsInImport = new Set(reconstructedFresh.map((t) => t.symbol));
+  const symbolsInImport = new Set<string>([
+    ...reconstructedFresh.map((t) => t.symbol),
+    ...parsedFills.map((f) => f.symbol),
+  ]);
   const seedBySymbol = new Map<string, SeedPosition>();
   const ambiguousSymbols = new Set<string>();
 
