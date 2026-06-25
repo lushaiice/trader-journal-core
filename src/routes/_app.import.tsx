@@ -42,6 +42,10 @@ import {
   loadOpenTrades,
   type ClassifiedTradeC3,
 } from "@/lib/trades/import/continuation";
+import {
+  loadOpeningPositions,
+  loadCorporateActions,
+} from "@/lib/trades/import/holdings-api";
 import type { ImportResult, ReconstructedTrade } from "@/lib/trades/import/types";
 import {
   parseBrokerPnlReport,
@@ -111,12 +115,17 @@ function ImportPage() {
     setSummary(null);
     try {
       const text = await file.text();
-      const result = importZerodhaTradebook(text);
-      const parsed = parseZerodhaTradebook(text);
-      const [existing, openTrades] = await Promise.all([
+      const [openings, cas, existing, openTrades] = await Promise.all([
+        loadOpeningPositions(user.id),
+        loadCorporateActions(user.id),
         loadExistingFillIds(user.id),
         loadOpenTrades(user.id),
       ]);
+      const result = importZerodhaTradebook(text, {
+        openingPositions: openings,
+        corporateActions: cas,
+      });
+      const parsed = parseZerodhaTradebook(text);
       const warningsSink = [...result.warnings];
       const { items } = classifyWithContinuation(
         parsed.fills,
