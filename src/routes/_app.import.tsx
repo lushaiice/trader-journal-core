@@ -653,9 +653,11 @@ function PreviewView({
         <Button variant="outline" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
-        <Button onClick={onConfirm} disabled={busy || selectedCount === 0}>
+        <Button onClick={onConfirm} disabled={busy || importCount === 0}>
           {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Import {selectedCount} trade{selectedCount === 1 ? "" : "s"}
+          {replaceMode
+            ? `Replace history with ${importCount} trade${importCount === 1 ? "" : "s"}`
+            : `Import ${importCount} trade${importCount === 1 ? "" : "s"}`}
         </Button>
       </div>
     </>
