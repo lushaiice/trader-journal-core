@@ -145,6 +145,19 @@ function Trades() {
                 </Button>
                 <Button
                   size="sm"
+                  variant="outline"
+                  disabled={selected.size === 0}
+                  onClick={() => {
+                    const rows = filtered.filter((t) => selected.has(t.trade.id));
+                    if (rows.length === 0) return;
+                    downloadTradesCsv(rows);
+                    toast.success(`Exported ${rows.length} trade${rows.length === 1 ? "" : "s"}`);
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" /> Export CSV
+                </Button>
+                <Button
+                  size="sm"
                   variant="destructive"
                   disabled={selected.size === 0 || bulkDelete.isPending}
                   onClick={() => setConfirmBulk(true)}
@@ -159,6 +172,20 @@ function Trades() {
               <>
                 {(data?.length ?? 0) > 0 && (
                   <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={filtered.length === 0}
+                      onClick={() => {
+                        if (filtered.length === 0) return;
+                        downloadTradesCsv(filtered);
+                        toast.success(
+                          `Exported ${filtered.length} trade${filtered.length === 1 ? "" : "s"}`,
+                        );
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export CSV
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => setSelectMode(true)}>
                       <CheckSquare className="h-4 w-4 mr-2" /> Select
                     </Button>
