@@ -258,9 +258,46 @@ export function parseZerodhaTradebook(csvText: string): ParseOutput {
       continue;
     }
 
-    // Parse executedAt as ISO local; treat as wall clock (IST). Use Date in UTC parse to keep ordering stable.
-    // Format expected: YYYY-MM-DDTHH:MM:SS (no zone). Append 'Z' to get a deterministic Date for ordering.
-    const isoForDate = /T/.test(execStr) ? execStr : execStr.replace(" ", "T");
+    // Normalize trade_date (accept ISO or DD-MM-YYYY).
+    const normTradeDate = normalizeDate(tradeDate);
+    if (!normTradeDate) {
+      warnings.push({
+        code: "bad_row",
+        message: `Invalid trade_date: ${tradeDate}`,
+        rowRef,
+      });
+      rowsSkipped++;
+      continue;
+    }
+
+    const normExpiryDate = expiryDate ? normalizeDate(expiryDate) : null;
+    if (expiryDate && !normExpiryDate) {
+      warnings.push({
+        code: "bad_row",
+        message: `Invalid expiry_date: ${expiryDate}`,
+        rowRef,
+      });
+      rowsSkipped++;
+      continue;
+    }
+
+    // order_execution_time: "YYYY-MM-DD[T| ]HH:MM:SS" or "DD-MM-YYYY[T| ]HH:MM:SS".
+    // Normalize date portion to ISO before constructing the Date for stable ordering.
+    const execNormalized = execStr.replace(" ", "T");
+    const tIdx = execNormalized.indexOf("T");
+    const execDatePart = tIdx >= 0 ? execNormalized.slice(0, tIdx) : execNormalized;
+    const execTimePart = tIdx >= 0 ? execNormalized.slice(tIdx + 1) : "";
+    const normExecDate = normalizeDate(execDatePart);
+    if (!normExecDate || !execTimePart) {
+      warnings.push({
+        code: "bad_row",
+        message: `Invalid order_execution_time: ${execStr}`,
+        rowRef,
+      });
+      rowsSkipped++;
+      continue;
+    }
+    const isoForDate = `${normExecDate}T${execTimePart}`;
     const executedAt = new Date(isoForDate + (/[zZ]|[+-]\d{2}:?\d{2}$/.test(isoForDate) ? "" : "Z"));
     if (isNaN(executedAt.getTime())) {
       warnings.push({
@@ -272,8 +309,7 @@ export function parseZerodhaTradebook(csvText: string): ParseOutput {
       continue;
     }
 
-    const timePart = isoForDate.split("T")[1] ?? "00:00:00";
-    const entryTimeHHMMSS = timePart.slice(0, 8);
+    const entryTimeHHMMSS = execTimePart.slice(0, 8);
 
     fills.push({
       symbol,
@@ -284,12 +320,12 @@ export function parseZerodhaTradebook(csvText: string): ParseOutput {
       tradeId,
       orderId,
       executedAt,
-      tradeDate,
+      tradeDate: normTradeDate,
       entryTimeHHMMSS,
       exchange,
       segment,
       series,
-      expiryDate,
+      expiryDate: normExpiryDate,
     });
   }
 
