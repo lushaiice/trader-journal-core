@@ -391,6 +391,10 @@ function PreviewView({
 
   const selectedCount = preview.selected.size;
   const orphanSells = preview.result.warnings.filter((w) => w.code === "orphan_sell");
+  const unsupportedCount = preview.result.warnings.filter(
+    (w) => w.code === "unsupported_segment",
+  ).length;
+  const importCount = replaceMode ? preview.result.trades.length : selectedCount;
 
   return (
     <>
