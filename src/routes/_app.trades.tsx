@@ -293,19 +293,103 @@ function Trades() {
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {filtered.map((t) => (
-            <TradeCard
-              key={t.trade.id}
-              trade={t.trade}
-              exits={t.exits}
-              discipline={t.discipline}
-              onClick={() => setActiveId(t.trade.id)}
-            />
-          ))}
+          {filtered.map((t) => {
+            const isSelected = selected.has(t.trade.id);
+            return (
+              <div key={t.trade.id} className="relative">
+                {selectMode && (
+                  <button
+                    type="button"
+                    onClick={() => toggleSelected(t.trade.id)}
+                    aria-label={isSelected ? "Deselect trade" : "Select trade"}
+                    className="absolute inset-0 z-10 rounded-xl ring-2 ring-transparent data-[selected=true]:ring-primary transition-shadow"
+                    data-selected={isSelected}
+                  />
+                )}
+                {selectMode && (
+                  <div className="absolute top-3 right-3 z-20 pointer-events-none">
+                    <Checkbox checked={isSelected} aria-hidden />
+                  </div>
+                )}
+                <TradeCard
+                  trade={t.trade}
+                  exits={t.exits}
+                  discipline={t.discipline}
+                  onClick={
+                    selectMode ? () => toggleSelected(t.trade.id) : () => setActiveId(t.trade.id)
+                  }
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 
       <TradeDetailModal tradeId={activeId} onClose={() => setActiveId(null)} />
+
+      <AlertDialog open={confirmBulk} onOpenChange={setConfirmBulk}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selected.size} trade{selected.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected trades along with their exits, discipline logs,
+              and import history. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                const count = selected.size;
+                try {
+                  await bulkDelete.mutateAsync(Array.from(selected));
+                  toast.success(`Deleted ${count} trade${count === 1 ? "" : "s"}`);
+                  exitSelectMode();
+                } catch (e) {
+                  toast.error("Failed to delete trades", {
+                    description: e instanceof Error ? e.message : undefined,
+                  });
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmAll} onOpenChange={setConfirmAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete all trades?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes every trade in your account ({data?.length ?? 0} total),
+              along with all exits, discipline logs, and broker import history. This cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                try {
+                  await deleteAll.mutateAsync();
+                  toast.success("All trades deleted");
+                  exitSelectMode();
+                } catch (e) {
+                  toast.error("Failed to delete trades", {
+                    description: e instanceof Error ? e.message : undefined,
+                  });
+                }
+              }}
+            >
+              Delete all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
