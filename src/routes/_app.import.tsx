@@ -87,6 +87,8 @@ function ImportPage() {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [summary, setSummary] = useState<PersistSummary | null>(null);
+  const [replaceMode, setReplaceMode] = useState(false);
+  const [confirmReplace, setConfirmReplace] = useState(false);
 
   const handleFile = async (file: File) => {
     if (!user) {
