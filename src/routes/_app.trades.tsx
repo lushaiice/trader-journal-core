@@ -122,17 +122,67 @@ function Trades() {
         title="Trade History"
         description="Every trade you've logged."
         action={
-          <div className="flex items-center gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link to="/import">
-                <Upload className="h-4 w-4 mr-2" /> Import from broker
-              </Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/add-trade">
-                <PlusCircle className="h-4 w-4 mr-2" /> Add trade
-              </Link>
-            </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectMode ? (
+              <>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {selected.size} selected
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const visibleIds = filtered.map((t) => t.trade.id);
+                    const allSelected = visibleIds.every((id) => selected.has(id));
+                    setSelected(allSelected ? new Set() : new Set(visibleIds));
+                  }}
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  {filtered.length > 0 && filtered.every((t) => selected.has(t.trade.id))
+                    ? "Clear"
+                    : "Select all"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={selected.size === 0 || bulkDelete.isPending}
+                  onClick={() => setConfirmBulk(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete ({selected.size})
+                </Button>
+                <Button size="sm" variant="ghost" onClick={exitSelectMode}>
+                  <X className="h-4 w-4 mr-2" /> Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                {(data?.length ?? 0) > 0 && (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => setSelectMode(true)}>
+                      <CheckSquare className="h-4 w-4 mr-2" /> Select
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setConfirmAll(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" /> Delete all
+                    </Button>
+                  </>
+                )}
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/import">
+                    <Upload className="h-4 w-4 mr-2" /> Import from broker
+                  </Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link to="/add-trade">
+                    <PlusCircle className="h-4 w-4 mr-2" /> Add trade
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         }
       />
