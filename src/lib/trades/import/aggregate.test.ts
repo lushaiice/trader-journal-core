@@ -45,14 +45,27 @@ describe("aggregateFills", () => {
     expect(trades[0].source).toBe("csv_import");
   });
 
-  it("simple short round-trip", () => {
+  it("simple short round-trip (futures)", () => {
+    const fills = [
+      mkFill({ side: "sell", quantity: 5, price: 200, symbol: "NIFTY25OCTFUT" }),
+      mkFill({ side: "buy", quantity: 5, price: 190, symbol: "NIFTY25OCTFUT" }),
+    ].map((f) => ({ ...f, instrumentType: "futures" as const, segment: "FO" }));
+    const { trades } = aggregateFills(fills);
+    expect(trades[0].side).toBe("short");
+    expect(trades[0].status).toBe("closed");
+  });
+
+  it("equity sell without an open long is an orphan_sell warning, not a phantom short", () => {
     const fills = [
       mkFill({ side: "sell", quantity: 5, price: 200 }),
       mkFill({ side: "buy", quantity: 5, price: 190 }),
     ];
-    const { trades } = aggregateFills(fills);
-    expect(trades[0].side).toBe("short");
-    expect(trades[0].status).toBe("closed");
+    const { trades, warnings } = aggregateFills(fills);
+    expect(warnings.some((w) => w.code === "orphan_sell")).toBe(true);
+    // The trailing buy opens a new long that never closes.
+    expect(trades.length).toBe(1);
+    expect(trades[0].side).toBe("long");
+    expect(trades[0].status).toBe("open");
   });
 
   it("multiple fills of same order aggregated into one exit", () => {
