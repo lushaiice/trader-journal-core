@@ -41,13 +41,13 @@ describe("parseZerodhaTradebook", () => {
     expect(res.rowsSkipped).toBe(0);
   });
 
-  it("warns on unknown segment and skips row", () => {
+  it("flags unsupported segment (currency/commodity) and skips row", () => {
     const csv =
       HEADER +
       "\nUSDINR,xx,2025-10-01,CDS,CDS,XX,buy,,1,82.5,T1,O1,2025-10-01T09:30:00\n";
     const res = parseZerodhaTradebook(csv);
     expect(res.fills.length).toBe(0);
-    expect(res.warnings[0].code).toBe("unknown_segment");
+    expect(res.warnings[0].code).toBe("unsupported_segment");
     expect(res.rowsSkipped).toBe(1);
   });
 
