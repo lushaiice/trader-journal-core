@@ -284,7 +284,9 @@ function synthesizeFromContinuation(
       quantity: e.quantity,
       exit_date: e.exitDate,
       exit_time: e.exitTime,
+      entry_price: e.entryPrice,
     })),
+
     brokerage: 0,
     taxes: 0,
     other_fees: 0,
