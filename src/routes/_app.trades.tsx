@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { History, PlusCircle, Search, Loader2, Upload, Trash2, CheckSquare, X } from "lucide-react";
+import { History, PlusCircle, Search, Loader2, Upload, Trash2, CheckSquare, X, Download } from "lucide-react";
 import { isAfter, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
