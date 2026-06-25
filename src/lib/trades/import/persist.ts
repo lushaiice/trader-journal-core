@@ -266,7 +266,11 @@ async function persistOne(
   // broker_trade_id already claimed (e.g. by a continuation earlier in the
   // same batch, or by a flip remainder sharing the closing fill) doesn't
   // violate broker_fills_user_trade_unique.
-  const uniqueFillIds = Array.from(new Set(t.fillTradeIds));
+  // Drop synthetic OPEN-* ids (Phase 3 opening positions) — they aren't broker fills.
+  const uniqueFillIds = Array.from(new Set(t.fillTradeIds)).filter(
+    (id) => !id.startsWith("OPEN-"),
+  );
+  if (uniqueFillIds.length === 0) return;
   const { error: fErr } = await supabase.from("broker_fills").upsert(
     uniqueFillIds.map((bid) => ({
       user_id: userId,

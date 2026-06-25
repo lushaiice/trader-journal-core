@@ -116,3 +116,22 @@ export interface Continuation {
   flipRemainder?: ReconstructedTrade;
   warnings: string[];
 }
+
+/** Phase 3 — pre-import opening holding for one symbol. */
+export interface OpeningPosition {
+  symbol: string;
+  side: TradeSide;
+  quantity: number;
+  avgCost: number;
+  acquisitionDate: string; // YYYY-MM-DD
+}
+
+/** Phase 4 — corporate action that rewrites units & cost basis at ex-date. */
+export interface CorporateAction {
+  symbol: string;
+  exDate: string; // YYYY-MM-DD
+  actionType: "split" | "bonus" | "consolidation";
+  ratioFrom: number;
+  ratioTo: number;
+}
+

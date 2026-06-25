@@ -115,6 +115,45 @@ export type Database = {
         }
         Relationships: []
       }
+      corporate_actions: {
+        Row: {
+          action_type: string
+          created_at: string
+          ex_date: string
+          id: string
+          notes: string | null
+          ratio_from: number
+          ratio_to: number
+          symbol: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          ex_date: string
+          id?: string
+          notes?: string | null
+          ratio_from: number
+          ratio_to: number
+          symbol: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          ex_date?: string
+          id?: string
+          notes?: string | null
+          ratio_from?: number
+          ratio_to?: number
+          symbol?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_journals: {
         Row: {
           created_at: string
@@ -263,6 +302,45 @@ export type Database = {
           id?: string
           message?: string
           route_at_time?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      opening_positions: {
+        Row: {
+          acquisition_date: string
+          avg_cost: number
+          created_at: string
+          id: string
+          notes: string | null
+          quantity: number
+          side: string
+          symbol: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acquisition_date: string
+          avg_cost: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity: number
+          side: string
+          symbol: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acquisition_date?: string
+          avg_cost?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          side?: string
+          symbol?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

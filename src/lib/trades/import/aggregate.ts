@@ -6,7 +6,69 @@ import type {
   ReconstructedTrade,
   SeedPosition,
   Continuation,
+  OpeningPosition,
+  CorporateAction,
 } from "./types";
+
+/**
+ * Phase 4: rewrite fill quantity / price for any fill that occurred BEFORE
+ * a corporate action's ex-date. The broker reports post-CA units for sells
+ * after ex-date, so we restate pre-CA buys (and synthetic opening fills)
+ * into post-CA units to keep FIFO cost basis consistent.
+ *
+ * Adjustment factor = ratio_to / ratio_from:
+ *  - split 1:2          → factor 2 (qty doubles, price halves)
+ *  - bonus 1:1 (2-for-1) → factor 2
+ *  - consolidation 5:1  → factor 0.2 (qty shrinks, price scales up)
+ */
+function applyCorporateActions(
+  fills: Fill[],
+  cas: CorporateAction[],
+): Fill[] {
+  if (cas.length === 0) return fills;
+  const bySymbol = new Map<string, CorporateAction[]>();
+  for (const ca of cas) {
+    const list = bySymbol.get(ca.symbol) ?? [];
+    list.push(ca);
+    bySymbol.set(ca.symbol, list);
+  }
+  return fills.map((f) => {
+    const symCas = bySymbol.get(f.symbol);
+    if (!symCas) return f;
+    let qty = f.quantity;
+    let price = f.price;
+    for (const ca of symCas) {
+      if (f.tradeDate < ca.exDate && ca.ratioFrom > 0) {
+        const factor = ca.ratioTo / ca.ratioFrom;
+        qty = qty * factor;
+        price = price / factor;
+      }
+    }
+    return { ...f, quantity: qty, price };
+  });
+}
+
+/** Phase 3: turn opening holdings into synthetic BUY fills dated at acquisition. */
+function buildOpeningFills(openings: OpeningPosition[]): Fill[] {
+  return openings
+    .filter((o) => o.quantity > 0 && o.side === "long")
+    .map((o) => ({
+      symbol: o.symbol,
+      instrumentType: "equity" as const,
+      side: "buy" as const,
+      quantity: o.quantity,
+      price: o.avgCost,
+      tradeId: `OPEN-${o.symbol}`,
+      orderId: `OPEN-${o.symbol}`,
+      executedAt: new Date(`${o.acquisitionDate}T00:00:00Z`),
+      tradeDate: o.acquisitionDate,
+      entryTimeHHMMSS: "00:00:00",
+      exchange: "",
+      segment: "EQ",
+      series: "EQ",
+      expiryDate: null,
+    }));
+}
 
 interface SplitFill extends Fill {
   // logical quantity to apply (may be a split portion of original fill)
@@ -110,6 +172,10 @@ export interface AggregateOutput {
 
 export interface AggregateOptions {
   seedPositions?: SeedPosition[];
+  /** Phase 3 — pre-import holdings injected as synthetic opening buys. */
+  openingPositions?: OpeningPosition[];
+  /** Phase 4 — splits / bonuses / consolidations applied to pre-CA fills. */
+  corporateActions?: CorporateAction[];
 }
 
 export function aggregateFills(
@@ -125,12 +191,22 @@ export function aggregateFills(
     seedsBySymbol.set(s.symbol, s);
   }
 
+  // Phase 3 + 4: build the effective fill stream.
+  // Skip opening fills for symbols that already have a continuation seed —
+  // the seed's openLots already represent the pre-existing basis.
+  const openings = (options.openingPositions ?? []).filter(
+    (o) => !seedsBySymbol.has(o.symbol),
+  );
+  const merged = [...buildOpeningFills(openings), ...fills];
+  const effective = applyCorporateActions(merged, options.corporateActions ?? []);
+
   // Group by symbol (Phase 2: parser has already suffixed non-EQ series).
   const bySymbol = new Map<string, Fill[]>();
-  for (const f of fills) {
+  for (const f of effective) {
     if (!bySymbol.has(f.symbol)) bySymbol.set(f.symbol, []);
     bySymbol.get(f.symbol)!.push(f);
   }
+
 
   const symbols = Array.from(bySymbol.keys()).sort();
 
