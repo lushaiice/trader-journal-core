@@ -146,8 +146,10 @@ export function classifyWithContinuation(
   }
 
   const items: ClassifiedTradeC3[] = [];
+  const seenSymbols = new Set<string>();
 
   for (const trade of reconstructedFresh) {
+    seenSymbols.add(trade.symbol);
     const matched = trade.fillTradeIds.filter((id) => existingFillIds.has(id));
     const allDuplicate =
       matched.length > 0 && matched.length === trade.fillTradeIds.length;
@@ -181,7 +183,112 @@ export function classifyWithContinuation(
     });
   }
 
+  // Surface symbols that had NO fresh trade (e.g. equity orphan sells skipped
+  // by the fresh aggregator) but DO have a continuation against an existing
+  // open trade, or are ambiguous, or are pure duplicates. Without this, the
+  // preview would silently hide closing fills that legitimately continue a
+  // prior open lot.
+  for (const symbol of new Set(parsedFills.map((f) => f.symbol))) {
+    if (seenSymbols.has(symbol)) continue;
+    const symFills = parsedFills.filter((f) => f.symbol === symbol);
+    const allKnown =
+      symFills.length > 0 && symFills.every((f) => existingFillIds.has(f.tradeId));
+
+    const cont = continuationsBySymbol.get(symbol);
+    if (cont && cont.addedFillTradeIds.length > 0) {
+      const synthetic = synthesizeFromContinuation(symbol, symFills, cont, seedBySymbol.get(symbol)!);
+      items.push({
+        trade: synthetic,
+        classification: "continuation",
+        matchedFillIds: symFills
+          .map((f) => f.tradeId)
+          .filter((id) => existingFillIds.has(id)),
+        continuation: cont,
+        continuationSummary: summarizeContinuation(cont),
+      });
+      continue;
+    }
+
+    if (allKnown) {
+      const synthetic = synthesizeFromFills(symbol, symFills);
+      items.push({
+        trade: synthetic,
+        classification: "duplicate",
+        matchedFillIds: symFills.map((f) => f.tradeId),
+      });
+      continue;
+    }
+
+    if (ambiguousSymbols.has(symbol)) {
+      const synthetic = synthesizeFromFills(symbol, symFills);
+      items.push({
+        trade: synthetic,
+        classification: "ambiguous",
+        matchedFillIds: symFills
+          .map((f) => f.tradeId)
+          .filter((id) => existingFillIds.has(id)),
+      });
+    }
+  }
+
   return { items, freshWarnings };
+}
+
+function synthesizeFromFills(
+  symbol: string,
+  symFills: Fill[],
+): ReconstructedTrade {
+  const earliest = symFills.reduce((a, b) =>
+    a.executedAt.getTime() <= b.executedAt.getTime() ? a : b,
+  );
+  const qty = symFills.reduce((a, b) => a + b.quantity, 0);
+  return {
+    symbol,
+    instrument_type: earliest.instrumentType,
+    side: earliest.side === "buy" ? "long" : "short",
+    status: "open",
+    entry_date: earliest.tradeDate,
+    entry_time: earliest.entryTimeHHMMSS,
+    entry_price: earliest.price,
+    quantity: qty,
+    exits: [],
+    brokerage: 0,
+    taxes: 0,
+    other_fees: 0,
+    source: "csv_import",
+    fillTradeIds: symFills.map((f) => f.tradeId),
+    grossOnly: true,
+  };
+}
+
+function synthesizeFromContinuation(
+  symbol: string,
+  symFills: Fill[],
+  cont: Continuation,
+  seed: SeedPosition,
+): ReconstructedTrade {
+  return {
+    symbol,
+    instrument_type: symFills[0]?.instrumentType ?? "equity",
+    side: seed.side,
+    status: cont.newStatus === "closed" ? "closed" : "open",
+    entry_date: seed.earliestEntryAt.toISOString().slice(0, 10),
+    entry_time: seed.earliestEntryAt.toISOString().slice(11, 19),
+    entry_price: cont.newEntryPrice,
+    quantity: cont.newQuantity,
+    exits: cont.newExits.map((e) => ({
+      exit_price: e.exitPrice,
+      quantity: e.quantity,
+      exit_date: e.exitDate,
+      exit_time: e.exitTime,
+    })),
+    brokerage: 0,
+    taxes: 0,
+    other_fees: 0,
+    source: "csv_import",
+    fillTradeIds: cont.addedFillTradeIds,
+    grossOnly: true,
+  };
 }
 
 export function summarizeContinuation(c: Continuation): string {
