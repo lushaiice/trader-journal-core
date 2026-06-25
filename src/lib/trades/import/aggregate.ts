@@ -201,6 +201,19 @@ export function aggregateFills(
         const slice: SplitFill = { ...fill, quantity: remaining };
 
         if (current === null) {
+          // For equity, only a BUY may open a new lot. A standalone sell most
+          // likely closes a position held before the imported window; never
+          // silently create a phantom short.
+          if (slice.instrumentType === "equity" && slice.side === "sell") {
+            warnings.push({
+              code: "orphan_sell",
+              message: `Sell with no open long position; skipped (likely closing a holding outside this import)`,
+              symbol,
+              rowRef: fill.tradeId,
+            });
+            remaining = 0;
+            break;
+          }
           current = openWith(slice);
           remaining = 0;
           break;
