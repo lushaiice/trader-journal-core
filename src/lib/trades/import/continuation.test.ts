@@ -70,17 +70,20 @@ describe("aggregateFills (seeded / continuation)", () => {
     expect(c.newStatus).toBe("open");
   });
 
-  it("flip across files: closes seed and opens opposite as flipRemainder", () => {
+  it("equity over-sell against seed closes the lot and warns (no phantom short)", () => {
     const fills = [mkFill({ side: "sell", quantity: 15, price: 110 })];
-    const { continuations } = aggregateFills(fills, { seedPositions: [seed()] });
+    const { continuations, warnings } = aggregateFills(fills, {
+      seedPositions: [seed()],
+    });
     const c = continuations.get("RELIANCE")!;
     expect(c.newStatus).toBe("closed");
     expect(c.newExits[0].quantity).toBe(10);
-    expect(c.flipRemainder).toBeDefined();
-    expect(c.flipRemainder!.side).toBe("short");
-    expect(c.flipRemainder!.quantity).toBe(5);
-    expect(c.flipRemainder!.status).toBe("open");
+    expect(c.newExits[0].entryPrice).toBe(100);
+    // Equity cannot flip into a short — over-sell remainder is dropped.
+    expect(c.flipRemainder).toBeUndefined();
+    expect(warnings.some((w) => w.code === "position_flip")).toBe(true);
   });
+
 
   it("out_of_order_fill is dropped and warned", () => {
     const fills = [

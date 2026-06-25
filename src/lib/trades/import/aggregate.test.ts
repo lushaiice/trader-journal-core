@@ -68,7 +68,7 @@ describe("aggregateFills", () => {
     expect(trades[0].status).toBe("open");
   });
 
-  it("multiple fills of same order aggregated into one exit", () => {
+  it("multiple fills of same order produce per-lot exits with shared cost basis", () => {
     const fills = [
       mkFill({ side: "buy", quantity: 10, price: 100, orderId: "O-IN" }),
       mkFill({ side: "sell", quantity: 4, price: 110, orderId: "O-OUT" }),
@@ -76,10 +76,34 @@ describe("aggregateFills", () => {
     ];
     const { trades } = aggregateFills(fills);
     expect(trades.length).toBe(1);
-    expect(trades[0].exits.length).toBe(1);
-    expect(trades[0].exits[0].quantity).toBe(10);
-    expect(trades[0].exits[0].exit_price).toBeCloseTo((4 * 110 + 6 * 120) / 10);
+    // Per-lot FIFO: each sell pops from the single buy lot, so 2 exit rows.
+    expect(trades[0].exits.length).toBe(2);
+    expect(trades[0].exits[0].entry_price).toBe(100);
+    expect(trades[0].exits[1].entry_price).toBe(100);
+    expect(trades[0].exits[0].quantity + trades[0].exits[1].quantity).toBe(10);
   });
+
+  it("per-lot FIFO crystallizes partial-exit P&L on an open position", () => {
+    // Buy 10@100 + Buy 10@120 → sell 5@130. Position remains open (15 left),
+    // but realized P&L for the 5 sold should be 5*(130-100)=150 (FIFO basis),
+    // NOT 5*(130-110)=100 (weighted-avg basis).
+    const fills = [
+      mkFill({ side: "buy", quantity: 10, price: 100 }),
+      mkFill({ side: "buy", quantity: 10, price: 120 }),
+      mkFill({ side: "sell", quantity: 5, price: 130 }),
+    ];
+    const { trades } = aggregateFills(fills);
+    expect(trades.length).toBe(1);
+    expect(trades[0].status).toBe("open");
+    expect(trades[0].exits.length).toBe(1);
+    expect(trades[0].exits[0].quantity).toBe(5);
+    expect(trades[0].exits[0].entry_price).toBe(100);
+    const realized =
+      (trades[0].exits[0].exit_price - trades[0].exits[0].entry_price!) *
+      trades[0].exits[0].quantity;
+    expect(realized).toBe(150);
+  });
+
 
   it("weighted entry across multiple entry fills", () => {
     const fills = [
