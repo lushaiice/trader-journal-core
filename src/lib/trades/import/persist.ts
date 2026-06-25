@@ -198,13 +198,19 @@ async function persistOne(
     if (eErr) throw eErr;
   }
 
-  const { error: fErr } = await supabase.from("broker_fills").insert(
-    t.fillTradeIds.map((bid) => ({
+  // Dedupe within this trade and upsert with ignoreDuplicates so that a
+  // broker_trade_id already claimed (e.g. by a continuation earlier in the
+  // same batch, or by a flip remainder sharing the closing fill) doesn't
+  // violate broker_fills_user_trade_unique.
+  const uniqueFillIds = Array.from(new Set(t.fillTradeIds));
+  const { error: fErr } = await supabase.from("broker_fills").upsert(
+    uniqueFillIds.map((bid) => ({
       user_id: userId,
       broker,
       broker_trade_id: bid,
       imported_trade_id: tradeId,
     })),
+    { onConflict: "user_id,broker,broker_trade_id", ignoreDuplicates: true },
   );
   if (fErr) throw fErr;
 }
