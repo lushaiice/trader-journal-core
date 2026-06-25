@@ -79,4 +79,53 @@ describe("parseZerodhaTradebook", () => {
     expect(res.fills[0].instrumentType).toBe("futures");
     expect(res.fills[0].expiryDate).toBe("2025-11-27");
   });
+
+  it("normalizes DD-MM-YYYY trade_date and order_execution_time to ISO", () => {
+    const csv =
+      HEADER +
+      "\n3MINDIA,IN1,26-11-2025,NSE,EQ,EQ,buy,,2,100,T1,O1,26-11-2025T15:24:31" +
+      "\n3MINDIA,IN1,27-11-2025,NSE,EQ,EQ,sell,,2,110,T2,O2,27-11-2025T10:00:00\n";
+    const res = parseZerodhaTradebook(csv);
+    expect(res.warnings).toEqual([]);
+    expect(res.fills).toHaveLength(2);
+    expect(res.fills[0].tradeDate).toBe("2025-11-26");
+    expect(res.fills[0].entryTimeHHMMSS).toBe("15:24:31");
+    expect(res.fills[1].tradeDate).toBe("2025-11-27");
+    expect(res.fills[0].executedAt.getTime()).toBeLessThan(
+      res.fills[1].executedAt.getTime(),
+    );
+  });
+
+  it("normalizes DD-MM-YYYY expiry_date", () => {
+    const header = HEADER + ",expiry_date";
+    const csv =
+      header +
+      "\nNIFTY25NOVFUT,xx,01-11-2025,NFO,FO,XX,buy,,50,24000,T1,O1,01-11-2025T09:30:00,27-11-2025\n";
+    const res = parseZerodhaTradebook(csv);
+    expect(res.fills[0].expiryDate).toBe("2025-11-27");
+    expect(res.fills[0].tradeDate).toBe("2025-11-01");
+  });
+
+  it("handles mixed ISO and DD-MM-YYYY rows and orders chronologically", () => {
+    const csv =
+      HEADER +
+      "\nFOO,xx,27-11-2025,NSE,EQ,EQ,sell,,1,110,T2,O2,27-11-2025T10:00:00" +
+      "\nFOO,xx,2025-11-26,NSE,EQ,EQ,buy,,1,100,T1,O1,2025-11-26T09:00:00\n";
+    const res = parseZerodhaTradebook(csv);
+    expect(res.warnings).toEqual([]);
+    const sorted = [...res.fills].sort(
+      (a, b) => a.executedAt.getTime() - b.executedAt.getTime(),
+    );
+    expect(sorted[0].tradeDate).toBe("2025-11-26");
+    expect(sorted[1].tradeDate).toBe("2025-11-27");
+  });
+
+  it("rejects garbage dates as bad_row", () => {
+    const csv =
+      HEADER +
+      "\nABC,xx,2025/13/40,NSE,EQ,EQ,buy,,1,100,T1,O1,2025/13/40T09:30:00\n";
+    const res = parseZerodhaTradebook(csv);
+    expect(res.fills).toHaveLength(0);
+    expect(res.warnings.some((w) => w.code === "bad_row")).toBe(true);
+  });
 });
