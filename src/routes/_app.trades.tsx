@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { History, PlusCircle, Search, Loader2, Upload, Trash2, CheckSquare, X } from "lucide-react";
+import { History, PlusCircle, Search, Loader2, Upload, Trash2, CheckSquare, X, Download } from "lucide-react";
 import { isAfter, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
@@ -29,6 +29,7 @@ import { TradeCard } from "@/components/trades/trade-card";
 import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
 import { useTradesQuery, useBulkDeleteTrades, useDeleteAllTrades } from "@/lib/trades/api";
 import { netPnl } from "@/lib/trades/calculations";
+import { downloadTradesCsv } from "@/lib/trades/export-csv";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/trades")({
@@ -144,6 +145,19 @@ function Trades() {
                 </Button>
                 <Button
                   size="sm"
+                  variant="outline"
+                  disabled={selected.size === 0}
+                  onClick={() => {
+                    const rows = filtered.filter((t) => selected.has(t.trade.id));
+                    if (rows.length === 0) return;
+                    downloadTradesCsv(rows);
+                    toast.success(`Exported ${rows.length} trade${rows.length === 1 ? "" : "s"}`);
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" /> Export CSV
+                </Button>
+                <Button
+                  size="sm"
                   variant="destructive"
                   disabled={selected.size === 0 || bulkDelete.isPending}
                   onClick={() => setConfirmBulk(true)}
@@ -158,6 +172,20 @@ function Trades() {
               <>
                 {(data?.length ?? 0) > 0 && (
                   <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={filtered.length === 0}
+                      onClick={() => {
+                        if (filtered.length === 0) return;
+                        downloadTradesCsv(filtered);
+                        toast.success(
+                          `Exported ${filtered.length} trade${filtered.length === 1 ? "" : "s"}`,
+                        );
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export CSV
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => setSelectMode(true)}>
                       <CheckSquare className="h-4 w-4 mr-2" /> Select
                     </Button>
