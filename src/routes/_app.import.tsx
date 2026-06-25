@@ -417,7 +417,29 @@ function PreviewView({
           {counts.ambiguous > 0 && (
             <Badge variant="outline">{counts.ambiguous} ambiguous</Badge>
           )}
+          {unsupportedCount > 0 && (
+            <Badge variant="outline">{unsupportedCount} unsupported skipped</Badge>
+          )}
         </div>
+      </div>
+
+      <div className="surface-card p-4 mb-3 flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <Label htmlFor="replace-mode" className="text-sm font-medium cursor-pointer">
+            Replace full transaction history
+          </Label>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Wipe every previously-imported Zerodha trade and re-import from this file.
+            Manual trades are never deleted. Dedup and continuation are skipped — every
+            reconstructed trade is imported fresh.
+          </p>
+        </div>
+        <Switch
+          id="replace-mode"
+          checked={replaceMode}
+          onCheckedChange={onReplaceModeChange}
+          disabled={busy}
+        />
       </div>
 
       {/* Step 2 — Charges file */}
