@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Upload, AlertTriangle, Info, FileText } from "lucide-react";
+import { Loader2, Upload, AlertTriangle, Info, FileText, Receipt, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
@@ -29,7 +29,15 @@ import {
   loadOpenTrades,
   type ClassifiedTradeC3,
 } from "@/lib/trades/import/continuation";
-import type { ImportResult } from "@/lib/trades/import/types";
+import type { ImportResult, ReconstructedTrade } from "@/lib/trades/import/types";
+import {
+  parseBrokerPnlReport,
+  type BrokerPnlReport,
+} from "@/lib/trades/import/zerodha-pnl";
+import {
+  allocateChargesToTrades,
+  type AllocationResult,
+} from "@/lib/trades/import/allocate-charges";
 import { GrossPnlBadge } from "@/components/trades/gross-pnl-badge";
 import { formatINR } from "@/lib/trades/calculations";
 import { cn } from "@/lib/utils";
@@ -51,6 +59,13 @@ interface PreviewState {
   classified: ClassifiedTradeC3[];
   selected: Set<number>;
   fileName: string;
+  charges: ChargesState | null;
+}
+
+interface ChargesState {
+  fileName: string;
+  report: BrokerPnlReport;
+  allocation: AllocationResult;
 }
 
 function grossPnl(t: ClassifiedTradeC3["trade"]): number {
@@ -59,6 +74,10 @@ function grossPnl(t: ClassifiedTradeC3["trade"]): number {
     (acc, e) => acc + (e.exit_price - t.entry_price) * e.quantity * sign,
     0,
   );
+}
+
+function chargesOf(t: ReconstructedTrade): number {
+  return (t.brokerage ?? 0) + (t.taxes ?? 0) + (t.other_fees ?? 0);
 }
 
 function ImportPage() {
@@ -101,12 +120,71 @@ function ImportPage() {
           selected.add(i);
         }
       });
-      setPreview({ result: enrichedResult, classified: items, selected, fileName: file.name });
+      setPreview({
+        result: enrichedResult,
+        classified: items,
+        selected,
+        fileName: file.name,
+        charges: null,
+      });
     } catch (err) {
       toast.error("Could not read file", { description: (err as Error).message });
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleChargesFile = async (file: File) => {
+    if (!preview) return;
+    setBusy(true);
+    try {
+      const text = await file.text();
+      const report = parseBrokerPnlReport(text);
+      if (report.rows.length === 0) {
+        toast.error("Charges file could not be parsed", {
+          description: report.warnings.join("; ") || "no recognized columns",
+        });
+        return;
+      }
+      // allocate against the unique reconstructed trade objects (avoid double-mutating
+      // synthesized rows; classified.items may contain synth-from-continuation entries
+      // that share a symbol with a fresh trade).
+      const tradesForAllocation = preview.classified.map((c) => c.trade);
+      const allocation = allocateChargesToTrades(tradesForAllocation, report);
+
+      // remap allocated trades back onto classified items by reference
+      const byOriginal = new Map(allocation.trades.map((t, i) => [tradesForAllocation[i], t]));
+      const updatedClassified = preview.classified.map((c) => {
+        const updated = byOriginal.get(c.trade);
+        if (!updated) return c;
+        return { ...c, trade: updated };
+      });
+
+      setPreview({
+        ...preview,
+        classified: updatedClassified,
+        charges: { fileName: file.name, report, allocation },
+      });
+      toast.success(
+        `Allocated ${formatINR(allocation.totalAllocated)} of charges across ${allocation.appliedBySymbol.size} symbols`,
+      );
+    } catch (err) {
+      toast.error("Could not read charges file", {
+        description: (err as Error).message,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const clearCharges = () => {
+    if (!preview) return;
+    // strip allocated charges from each trade
+    const stripped = preview.classified.map((c) => ({
+      ...c,
+      trade: { ...c.trade, brokerage: 0, taxes: 0, other_fees: 0 },
+    }));
+    setPreview({ ...preview, classified: stripped, charges: null });
   };
 
   const confirm = useMutation({
@@ -116,7 +194,6 @@ function ImportPage() {
         const importable =
           c.classification === "new" || c.classification === "continuation";
         if (importable && !preview.selected.has(i)) {
-          // demote unchecked importables to overlap so they're flagged not inserted
           return { ...c, classification: "overlap" as const };
         }
         return c;
@@ -134,7 +211,6 @@ function ImportPage() {
     },
     onError: (err) => {
       toast.error("Import failed", { description: (err as Error).message });
-
     },
   });
 
@@ -147,22 +223,25 @@ function ImportPage() {
     <>
       <PageHeader
         title="Import from broker"
-        description="Upload a Zerodha Console tradebook CSV. Trades are reconstructed in your browser — the file never leaves this device."
+        description="Upload a Zerodha tradebook CSV. Add the matching P&L report to include broker charges and reconcile against Zerodha's net P&L."
       />
 
-      <Alert className="mb-4">
-        <Info className="h-4 w-4" />
-        <AlertTitle>P&amp;L shown is GROSS</AlertTitle>
-        <AlertDescription>
-          Zerodha's tradebook does not include brokerage or taxes. Add charges per trade after
-          import to see net figures.
-        </AlertDescription>
-      </Alert>
+      {!preview && !summary && (
+        <Alert className="mb-4">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Two files give the most accurate P&L</AlertTitle>
+          <AlertDescription>
+            The <strong>Tradebook</strong> reconstructs trades. The <strong>P&L</strong> report
+            (Console → Reports → P&L) carries broker charges (brokerage, STT, exchange, SEBI,
+            stamp, GST) which the tradebook omits. Without it, the app shows gross P&L only.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {!preview && !summary && (
         <div className="surface-card p-8 text-center">
           <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-          <h3 className="text-sm font-medium mb-1">Select a tradebook CSV</h3>
+          <h3 className="text-sm font-medium mb-1">Step 1 — Tradebook CSV</h3>
           <p className="text-xs text-muted-foreground mb-4">
             Console → Reports → Tradebook → Download (CSV).
           </p>
@@ -180,7 +259,7 @@ function ImportPage() {
             <Button asChild size="sm" disabled={busy}>
               <span>
                 {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Choose CSV file
+                Choose tradebook CSV
               </span>
             </Button>
           </label>
@@ -196,9 +275,11 @@ function ImportPage() {
             else next.add(i);
             setPreview({ ...preview, selected: next });
           }}
+          onChargesFile={handleChargesFile}
+          onClearCharges={clearCharges}
           onCancel={reset}
           onConfirm={() => confirm.mutate()}
-          busy={confirm.isPending}
+          busy={confirm.isPending || busy}
         />
       )}
 
@@ -212,12 +293,16 @@ function ImportPage() {
 function PreviewView({
   preview,
   onToggle,
+  onChargesFile,
+  onClearCharges,
   onCancel,
   onConfirm,
   busy,
 }: {
   preview: PreviewState;
   onToggle: (i: number) => void;
+  onChargesFile: (f: File) => void;
+  onClearCharges: () => void;
   onCancel: () => void;
   onConfirm: () => void;
   busy: boolean;
@@ -231,6 +316,7 @@ function PreviewView({
   );
 
   const selectedCount = preview.selected.size;
+  const orphanSells = preview.result.warnings.filter((w) => w.code === "orphan_sell");
 
   return (
     <>
@@ -253,9 +339,87 @@ function PreviewView({
           {counts.ambiguous > 0 && (
             <Badge variant="outline">{counts.ambiguous} ambiguous</Badge>
           )}
-
         </div>
       </div>
+
+      {/* Step 2 — Charges file */}
+      <div className="surface-card p-4 mb-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <Receipt className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <h3 className="text-sm font-medium">
+                Step 2 — Charges (optional but recommended)
+              </h3>
+              <p className="text-xs text-muted-foreground truncate">
+                {preview.charges
+                  ? `${preview.charges.fileName} · ${formatINR(preview.charges.allocation.totalAllocated)} allocated across ${preview.charges.allocation.appliedBySymbol.size} symbols`
+                  : "Without this, Net P&L = Gross P&L. Upload the Zerodha Console → Reports → P&L CSV."}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {preview.charges && (
+              <Button size="sm" variant="ghost" onClick={onClearCharges} disabled={busy}>
+                <X className="h-3.5 w-3.5 mr-1" /> Clear
+              </Button>
+            )}
+            <label className="inline-block">
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onChargesFile(f);
+                  e.target.value = "";
+                }}
+              />
+              <Button asChild size="sm" variant="outline" disabled={busy}>
+                <span>{preview.charges ? "Replace" : "Add P&L CSV"}</span>
+              </Button>
+            </label>
+          </div>
+        </div>
+        {preview.charges && preview.charges.report.warnings.length > 0 && (
+          <Alert className="mt-3" variant="default">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              {preview.charges.report.warnings.join("; ")}
+            </AlertDescription>
+          </Alert>
+        )}
+        {preview.charges &&
+          preview.charges.allocation.symbolsWithoutCharges.length > 0 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {preview.charges.allocation.symbolsWithoutCharges.length} symbol(s) in this import
+              had no matching row in the charges file — they will import as gross.
+            </p>
+          )}
+      </div>
+
+      {orphanSells.length > 0 && (
+        <Alert className="mb-3" variant="default">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>
+            {orphanSells.length} sell{orphanSells.length === 1 ? "" : "s"} of pre-existing holdings
+            were skipped
+          </AlertTitle>
+          <AlertDescription className="text-xs">
+            These rows close positions you held before this import window. Add them manually from
+            <strong> Add Trade</strong> with the original cost basis to capture their realized P&L,
+            or include an earlier tradebook that contains the opening buys.
+            <ul className="mt-2 space-y-0.5 max-h-24 overflow-y-auto">
+              {orphanSells.slice(0, 10).map((w, i) => (
+                <li key={i}>· {w.symbol}</li>
+              ))}
+              {orphanSells.length > 10 && (
+                <li className="text-muted-foreground">…and {orphanSells.length - 10} more</li>
+              )}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {preview.result.warnings.length > 0 && (
         <Alert className="mb-3" variant="default">
@@ -289,7 +453,9 @@ function PreviewView({
               <TableHead className="text-right">Qty</TableHead>
               <TableHead className="text-right">Entry</TableHead>
               <TableHead className="text-right">Avg Exit</TableHead>
-              <TableHead className="text-right">Gross P&amp;L</TableHead>
+              <TableHead className="text-right">
+                {preview.charges ? "Net P&L" : "Gross P&L"}
+              </TableHead>
               <TableHead>Class</TableHead>
             </TableRow>
           </TableHeader>
@@ -301,15 +467,14 @@ function PreviewView({
                 exitQty > 0
                   ? t.exits.reduce((a, e) => a + e.exit_price * e.quantity, 0) / exitQty
                   : null;
-              const pnl = grossPnl(t);
+              const gross = grossPnl(t);
+              const fees = chargesOf(t);
+              const pnl = gross - fees;
               const importable =
                 c.classification === "new" || c.classification === "continuation";
 
               return (
-                <TableRow
-                  key={i}
-                  className={cn(!importable && "opacity-60")}
-                >
+                <TableRow key={i} className={cn(!importable && "opacity-60")}>
                   <TableCell>
                     <Checkbox
                       checked={preview.selected.has(i)}
@@ -347,7 +512,12 @@ function PreviewView({
                   >
                     <div className="flex items-center justify-end gap-1.5">
                       {avgExit !== null ? formatINR(pnl) : "—"}
-                      <GrossPnlBadge source="csv_import" brokerage={0} taxes={0} other_fees={0} />
+                      <GrossPnlBadge
+                        source="csv_import"
+                        brokerage={t.brokerage ?? 0}
+                        taxes={t.taxes ?? 0}
+                        other_fees={t.other_fees ?? 0}
+                      />
                     </div>
                   </TableCell>
                   <TableCell>
@@ -378,7 +548,6 @@ function PreviewView({
           complete them manually.
         </p>
       )}
-
 
       <div className="flex items-center justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={busy}>
@@ -420,7 +589,6 @@ function ClassChip({ cls }: { cls: ClassifiedTradeC3["classification"] }) {
   );
 }
 
-
 function SummaryView({ summary, onDone }: { summary: PersistSummary; onDone: () => void }) {
   return (
     <div className="surface-card p-6">
@@ -442,9 +610,12 @@ function SummaryView({ summary, onDone }: { summary: PersistSummary; onDone: () 
           ))}
         </ul>
       )}
-      <div className="mt-5 flex justify-end">
+      <div className="mt-5 flex justify-end gap-2">
         <Button size="sm" variant="outline" onClick={onDone}>
           Import another file
+        </Button>
+        <Button size="sm" asChild>
+          <a href="/import/reconcile">Reconcile against broker P&L</a>
         </Button>
       </div>
     </div>

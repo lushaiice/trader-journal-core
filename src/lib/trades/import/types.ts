@@ -37,12 +37,14 @@ export interface ReconstructedTrade {
   entry_price: number;
   quantity: number;
   exits: ReconstructedExit[];
-  brokerage: 0;
-  taxes: 0;
-  other_fees: 0;
+  /** May be populated by charges allocation from a Zerodha P&L CSV. */
+  brokerage: number;
+  taxes: number;
+  other_fees: number;
   source: "csv_import";
   fillTradeIds: string[];
-  grossOnly: true;
+  /** True until charges have been allocated to this trade. */
+  grossOnly: boolean;
 }
 
 export interface ImportWarning {
