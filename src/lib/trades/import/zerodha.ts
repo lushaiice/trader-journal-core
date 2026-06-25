@@ -79,6 +79,43 @@ export function inferInstrumentType(
   return null;
 }
 
+/**
+ * Accepts "YYYY-MM-DD" or "DD-MM-YYYY" (Zerodha's newer Console exports).
+ * Returns ISO "YYYY-MM-DD" or null if the input is not a valid calendar date.
+ */
+export function normalizeDate(raw: string): string | null {
+  const s = raw.trim();
+  if (!s) return null;
+  let y: number, m: number, d: number;
+  let iso: string;
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  const dmyMatch = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
+  if (isoMatch) {
+    y = Number(isoMatch[1]);
+    m = Number(isoMatch[2]);
+    d = Number(isoMatch[3]);
+    iso = s;
+  } else if (dmyMatch) {
+    d = Number(dmyMatch[1]);
+    m = Number(dmyMatch[2]);
+    y = Number(dmyMatch[3]);
+    iso = `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
+  } else {
+    return null;
+  }
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  // Validate via UTC Date round-trip (catches Feb 30 etc.)
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (
+    dt.getUTCFullYear() !== y ||
+    dt.getUTCMonth() !== m - 1 ||
+    dt.getUTCDate() !== d
+  ) {
+    return null;
+  }
+  return iso;
+}
+
 export interface ParseOutput {
   fills: Fill[];
   warnings: ImportWarning[];
