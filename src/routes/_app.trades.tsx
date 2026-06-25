@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { History, PlusCircle, Search, Loader2, Upload } from "lucide-react";
+import { History, PlusCircle, Search, Loader2, Upload, Trash2, CheckSquare, X } from "lucide-react";
 import { isAfter, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -14,10 +15,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TradeCard } from "@/components/trades/trade-card";
 import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
-import { useTradesQuery } from "@/lib/trades/api";
+import { useTradesQuery, useBulkDeleteTrades, useDeleteAllTrades } from "@/lib/trades/api";
 import { netPnl } from "@/lib/trades/calculations";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/trades")({
   component: () => (
@@ -48,6 +60,8 @@ function isNeedsReflection(t: { trade: { confidence: number | null; emotion_leve
 
 function Trades() {
   const { data, isLoading } = useTradesQuery();
+  const bulkDelete = useBulkDeleteTrades();
+  const deleteAll = useDeleteAllTrades();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [asset, setAsset] = useState<AssetFilter>("all");
@@ -55,6 +69,23 @@ function Trades() {
   const [time, setTime] = useState<TimeFilter>("all");
   const [sort, setSort] = useState<SortKey>("latest");
   const [needsReflection, setNeedsReflection] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmBulk, setConfirmBulk] = useState(false);
+  const [confirmAll, setConfirmAll] = useState(false);
+
+  const toggleSelected = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
 
   const needsReflectionCount = useMemo(
     () => (data ?? []).filter(isNeedsReflection).length,
@@ -91,17 +122,67 @@ function Trades() {
         title="Trade History"
         description="Every trade you've logged."
         action={
-          <div className="flex items-center gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link to="/import">
-                <Upload className="h-4 w-4 mr-2" /> Import from broker
-              </Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/add-trade">
-                <PlusCircle className="h-4 w-4 mr-2" /> Add trade
-              </Link>
-            </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectMode ? (
+              <>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {selected.size} selected
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const visibleIds = filtered.map((t) => t.trade.id);
+                    const allSelected = visibleIds.every((id) => selected.has(id));
+                    setSelected(allSelected ? new Set() : new Set(visibleIds));
+                  }}
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  {filtered.length > 0 && filtered.every((t) => selected.has(t.trade.id))
+                    ? "Clear"
+                    : "Select all"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={selected.size === 0 || bulkDelete.isPending}
+                  onClick={() => setConfirmBulk(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete ({selected.size})
+                </Button>
+                <Button size="sm" variant="ghost" onClick={exitSelectMode}>
+                  <X className="h-4 w-4 mr-2" /> Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                {(data?.length ?? 0) > 0 && (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => setSelectMode(true)}>
+                      <CheckSquare className="h-4 w-4 mr-2" /> Select
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setConfirmAll(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" /> Delete all
+                    </Button>
+                  </>
+                )}
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/import">
+                    <Upload className="h-4 w-4 mr-2" /> Import from broker
+                  </Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link to="/add-trade">
+                    <PlusCircle className="h-4 w-4 mr-2" /> Add trade
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         }
       />
@@ -212,19 +293,103 @@ function Trades() {
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {filtered.map((t) => (
-            <TradeCard
-              key={t.trade.id}
-              trade={t.trade}
-              exits={t.exits}
-              discipline={t.discipline}
-              onClick={() => setActiveId(t.trade.id)}
-            />
-          ))}
+          {filtered.map((t) => {
+            const isSelected = selected.has(t.trade.id);
+            return (
+              <div key={t.trade.id} className="relative">
+                {selectMode && (
+                  <button
+                    type="button"
+                    onClick={() => toggleSelected(t.trade.id)}
+                    aria-label={isSelected ? "Deselect trade" : "Select trade"}
+                    className="absolute inset-0 z-10 rounded-xl ring-2 ring-transparent data-[selected=true]:ring-primary transition-shadow"
+                    data-selected={isSelected}
+                  />
+                )}
+                {selectMode && (
+                  <div className="absolute top-3 right-3 z-20 pointer-events-none">
+                    <Checkbox checked={isSelected} aria-hidden />
+                  </div>
+                )}
+                <TradeCard
+                  trade={t.trade}
+                  exits={t.exits}
+                  discipline={t.discipline}
+                  onClick={
+                    selectMode ? () => toggleSelected(t.trade.id) : () => setActiveId(t.trade.id)
+                  }
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 
       <TradeDetailModal tradeId={activeId} onClose={() => setActiveId(null)} />
+
+      <AlertDialog open={confirmBulk} onOpenChange={setConfirmBulk}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selected.size} trade{selected.size === 1 ? "" : "s"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected trades along with their exits, discipline logs,
+              and import history. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                const count = selected.size;
+                try {
+                  await bulkDelete.mutateAsync(Array.from(selected));
+                  toast.success(`Deleted ${count} trade${count === 1 ? "" : "s"}`);
+                  exitSelectMode();
+                } catch (e) {
+                  toast.error("Failed to delete trades", {
+                    description: e instanceof Error ? e.message : undefined,
+                  });
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmAll} onOpenChange={setConfirmAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete all trades?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes every trade in your account ({data?.length ?? 0} total),
+              along with all exits, discipline logs, and broker import history. This cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                try {
+                  await deleteAll.mutateAsync();
+                  toast.success("All trades deleted");
+                  exitSelectMode();
+                } catch (e) {
+                  toast.error("Failed to delete trades", {
+                    description: e instanceof Error ? e.message : undefined,
+                  });
+                }
+              }}
+            >
+              Delete all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -155,9 +155,9 @@ export function useDeleteTrade() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (tradeId: string) => {
-      // exits/discipline cascade via FK on discipline; trade_exits via parent delete? we stored FK on exits
       await supabase.from("trade_exits").delete().eq("trade_id", tradeId);
       await supabase.from("discipline_logs").delete().eq("trade_id", tradeId);
+      await supabase.from("broker_fills").delete().eq("imported_trade_id", tradeId);
       const { error } = await supabase.from("trades").delete().eq("id", tradeId);
       if (error) throw error;
     },
@@ -173,6 +173,48 @@ export function useDeleteTrade() {
       if (ctx?.previous) qc.setQueryData(["trades"], ctx.previous);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["trades"] }),
+  });
+}
+
+export function useBulkDeleteTrades() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (tradeIds: string[]) => {
+      if (!tradeIds.length) return 0;
+      const chunkSize = 100;
+      for (let i = 0; i < tradeIds.length; i += chunkSize) {
+        const chunk = tradeIds.slice(i, i + chunkSize);
+        await supabase.from("trade_exits").delete().in("trade_id", chunk);
+        await supabase.from("discipline_logs").delete().in("trade_id", chunk);
+        await supabase.from("broker_fills").delete().in("imported_trade_id", chunk);
+        const { error } = await supabase.from("trades").delete().in("id", chunk);
+        if (error) throw error;
+      }
+      return tradeIds.length;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trades"] });
+      qc.invalidateQueries({ queryKey: ["trade"] });
+    },
+  });
+}
+
+export function useDeleteAllTrades() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not signed in");
+      await supabase.from("trade_exits").delete().eq("user_id", user.id);
+      await supabase.from("discipline_logs").delete().eq("user_id", user.id);
+      await supabase.from("broker_fills").delete().eq("user_id", user.id);
+      const { error } = await supabase.from("trades").delete().eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trades"] });
+      qc.invalidateQueries({ queryKey: ["trade"] });
+    },
   });
 }
 
