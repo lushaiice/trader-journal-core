@@ -293,6 +293,8 @@ function ImportPage() {
       {preview && !summary && (
         <PreviewView
           preview={preview}
+          replaceMode={replaceMode}
+          onReplaceModeChange={setReplaceMode}
           onToggle={(i) => {
             const next = new Set(preview.selected);
             if (next.has(i)) next.delete(i);
@@ -302,7 +304,13 @@ function ImportPage() {
           onChargesFile={handleChargesFile}
           onClearCharges={clearCharges}
           onCancel={reset}
-          onConfirm={() => confirm.mutate()}
+          onConfirm={() => {
+            if (replaceMode) {
+              setConfirmReplace(true);
+            } else {
+              confirm.mutate();
+            }
+          }}
           busy={confirm.isPending || busy}
         />
       )}
@@ -310,12 +318,40 @@ function ImportPage() {
       {summary && (
         <SummaryView summary={summary} onDone={reset} />
       )}
+
+      <AlertDialog open={confirmReplace} onOpenChange={setConfirmReplace}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace all imported trades?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This deletes every trade previously imported from Zerodha (along with
+              their exits and discipline logs), then imports this file fresh.
+              Trades you added manually will <strong>not</strong> be touched.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setConfirmReplace(false);
+                confirm.mutate();
+              }}
+            >
+              Replace and import
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
 
 function PreviewView({
   preview,
+  replaceMode,
+  onReplaceModeChange,
   onToggle,
   onChargesFile,
   onClearCharges,
@@ -324,6 +360,8 @@ function PreviewView({
   busy,
 }: {
   preview: PreviewState;
+  replaceMode: boolean;
+  onReplaceModeChange: (v: boolean) => void;
   onToggle: (i: number) => void;
   onChargesFile: (f: File) => void;
   onClearCharges: () => void;
