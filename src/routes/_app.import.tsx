@@ -193,6 +193,21 @@ function ImportPage() {
   const confirm = useMutation({
     mutationFn: async () => {
       if (!preview || !user) throw new Error("No preview");
+      let replacedCount = 0;
+      if (replaceMode) {
+        replacedCount = await replaceImportedTrades(user.id);
+        // After wiping prior CSV imports + the broker dedup ledger, every
+        // selected trade in the preview is effectively NEW. Skip continuation
+        // and dedup classifications because they referenced state we just
+        // deleted.
+        const fresh: ClassifiedTradeC3[] = preview.result.trades.map((trade) => ({
+          trade,
+          classification: "new" as const,
+          matchedFillIds: [],
+        }));
+        const s = await persistImportedTrades(fresh, user.id);
+        return { summary: s, replacedCount };
+      }
       const actionable: ClassifiedTradeC3[] = preview.classified.map((c, i) => {
         const importable =
           c.classification === "new" || c.classification === "continuation";
@@ -202,15 +217,21 @@ function ImportPage() {
         return c;
       });
       const s = await persistImportedTrades(actionable, user.id);
-      return s;
+      return { summary: s, replacedCount };
     },
-    onSuccess: (s) => {
+    onSuccess: ({ summary: s, replacedCount }) => {
       setSummary(s);
       qc.invalidateQueries({ queryKey: ["trades"] });
       const total = s.imported + s.continued;
-      toast.success(
-        `Imported ${s.imported} new + ${s.continued} continued (${total} total)`,
-      );
+      if (replacedCount > 0) {
+        toast.success(
+          `Replaced ${replacedCount} prior import${replacedCount === 1 ? "" : "s"} · imported ${total} trade${total === 1 ? "" : "s"}`,
+        );
+      } else {
+        toast.success(
+          `Imported ${s.imported} new + ${s.continued} continued (${total} total)`,
+        );
+      }
     },
     onError: (err) => {
       toast.error("Import failed", { description: (err as Error).message });
