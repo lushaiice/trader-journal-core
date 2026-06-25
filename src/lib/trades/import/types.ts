@@ -25,7 +25,11 @@ export interface ReconstructedExit {
   quantity: number;
   exit_date: string;
   exit_time: string;
+  /** Per-lot FIFO matched cost basis. Optional for backward compatibility;
+   *  when omitted, downstream code falls back to trade.entry_price. */
+  entry_price?: number;
 }
+
 
 export interface ReconstructedTrade {
   symbol: string;
@@ -96,7 +100,10 @@ export interface ContinuationExit {
   exitDate: string;
   exitTime: string;
   brokerTradeId: string;
+  /** Per-lot FIFO matched cost basis (Phase 1). */
+  entryPrice?: number;
 }
+
 
 export interface Continuation {
   existingTradeId: string;
