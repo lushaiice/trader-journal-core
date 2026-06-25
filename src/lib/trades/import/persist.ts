@@ -255,10 +255,12 @@ async function persistOne(
         exit_price: e.exit_price,
         quantity: e.quantity,
         exit_date: `${e.exit_date}T${e.exit_time}`,
+        entry_price: e.entry_price ?? null,
       })),
     );
     if (eErr) throw eErr;
   }
+
 
   // Dedupe within this trade and upsert with ignoreDuplicates so that a
   // broker_trade_id already claimed (e.g. by a continuation earlier in the

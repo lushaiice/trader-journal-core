@@ -387,6 +387,7 @@ export async function applyContinuation(
       quantity: e.quantity,
       exit_date: `${e.exitDate}T${e.exitTime}`,
       broker_trade_id: e.brokerTradeId,
+      entry_price: e.entryPrice ?? null,
     }));
     const { error: exErr } = await supabase
       .from("trade_exits")
@@ -396,6 +397,7 @@ export async function applyContinuation(
       });
     if (exErr) throw exErr;
     appliedExitCount = ownedExits.length;
+
   }
 
   // 4. Update FACTUAL fields on the existing trade. external_ref is also
