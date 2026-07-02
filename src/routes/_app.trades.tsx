@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { TradeCard } from "@/components/trades/trade-card";
 import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
+import { ImportTradesDialog } from "@/components/trades/import-trades-dialog";
 import { useTradesQuery } from "@/lib/trades/api";
 import { netPnl } from "@/lib/trades/calculations";
 
