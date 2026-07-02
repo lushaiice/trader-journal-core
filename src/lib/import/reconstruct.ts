@@ -25,13 +25,18 @@ interface OpenLot {
 /**
  * FIFO round-trip matcher.
  *
- * Walks orders per position in chronological order. The FIRST order in an
- * empty queue sets the opening side (buy → long, sell → short — options are
- * frequently sold-to-open, so we do NOT assume buy = entry). Same-side orders
- * push a new lot. Opposite-side orders consume lots FIFO. When a lot is fully
- * closed it emits a `closed` ReconstructedTrade. Residual opening qty emits
- * an `open` trade. A closing order with no lot available emits an Orphan
- * (pre-window holding).
+ * Walks orders per position in chronological order.
+ *
+ * - For F&O the FIRST order in an empty queue sets the opening side
+ *   (buy → long, sell → short). Sell-to-open is a legitimate options play.
+ * - For equity, a lone sell with no prior buy is treated as an ORPHAN
+ *   (pre-window holding) — retail equity in India can't be shorted for
+ *   delivery, so an unmatched sell means the buy was before the export.
+ *
+ * Same-side orders push a new lot. Opposite-side orders consume lots FIFO.
+ * A fully-closed lot emits a `closed` ReconstructedTrade; residual opening
+ * qty emits an `open` trade; closing qty with no lot available emits an
+ * Orphan.
  */
 export function reconstructPositions(
   orders: Order[],
