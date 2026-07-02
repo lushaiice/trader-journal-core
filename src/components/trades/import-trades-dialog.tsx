@@ -41,6 +41,7 @@ type Stage = "upload" | "preview";
 interface Preview extends ReconstructionResult {
   variant: "equity" | "fo";
   fillCount: number;
+  skippedRows: { rowNumber: number; reason: string }[];
 }
 
 export function ImportTradesDialog({ open, onOpenChange }: Props) {
