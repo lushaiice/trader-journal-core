@@ -108,6 +108,7 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   const closedCount = preview?.trades.filter((t) => t.kind === "closed").length ?? 0;
   const openCount = preview?.trades.filter((t) => t.kind === "open").length ?? 0;
   const orphanCount = preview?.orphans.length ?? 0;
+  const skippedCount = preview?.skippedRows.length ?? 0;
   const totalPnl = preview?.trades.reduce((a, t) => a + t.gross_pnl, 0) ?? 0;
 
   const dateRange = (() => {
