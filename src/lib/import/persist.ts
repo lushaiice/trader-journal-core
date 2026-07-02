@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import type { ReconstructedTrade } from "./index";
 
-export const IMPORT_SOURCE = "zerodha_import";
+// Must match the trades.source CHECK constraint: 'manual' | 'csv_import' | 'kite'.
+// 'kite' is reserved for the future live Kite Connect integration.
+export const IMPORT_SOURCE = "csv_import";
 
 export interface ImportOutcome {
   imported: number;

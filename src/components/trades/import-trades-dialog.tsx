@@ -290,9 +290,11 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="text-xs text-muted-foreground mb-2">
-                      These are closing fills whose opening trade isn&rsquo;t in this file — likely
-                      positions opened before your export window. Re-export with an earlier start
-                      date to include them.
+                      These closing fills have no matching opening trade in this file. Usually the
+                      position was opened before your export window — re-exporting with an earlier
+                      start date will capture it. It can also happen with bonus, split, or demerger
+                      shares, which have no buy fill to match. These rows were skipped; log them
+                      manually if you want them tracked.
                     </p>
                     <div className="space-y-1.5">
                       {preview.orphans.slice(0, 50).map((o, i) => (
