@@ -312,6 +312,37 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
                 </AccordionItem>
               </Accordion>
             )}
+
+            {skippedCount > 0 && (
+              <Accordion type="single" collapsible>
+                <AccordionItem value="skipped" className="border rounded-lg px-3">
+                  <AccordionTrigger className="text-sm">
+                    {skippedCount} row{skippedCount === 1 ? "" : "s"} skipped (unreadable) ·{" "}
+                    {preview.trades.length} trade{preview.trades.length === 1 ? "" : "s"}{" "}
+                    reconstructed
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      A few rows couldn&rsquo;t be parsed — usually a truncated final row from an
+                      interrupted download. The rest of the file imported fine.
+                    </p>
+                    <div className="space-y-1.5">
+                      {preview.skippedRows.slice(0, 50).map((s, i) => (
+                        <div
+                          key={i}
+                          className="flex justify-between gap-3 text-xs bg-muted/40 rounded px-2 py-1.5"
+                        >
+                          <span className="font-medium shrink-0">Row {s.rowNumber}</span>
+                          <span className="text-muted-foreground text-right truncate">
+                            {s.reason}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
           </div>
         )}
 
