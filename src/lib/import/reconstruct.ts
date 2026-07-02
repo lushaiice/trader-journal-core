@@ -76,8 +76,13 @@ export function reconstructPositions(
 
     for (const order of posOrders) {
       const openSide = queue[0]?.side;
+      // For equity, a lone sell with no open lot is a pre-window holding.
+      // For F&O, sell-to-open is legitimate.
+      const canOpenHere =
+        !openSide && (hasExpiryColumn || order.side === "buy");
+      const addingToSameSide = !!openSide && order.side === openSide;
 
-      if (!openSide || order.side === openSide) {
+      if (canOpenHere || addingToSameSide) {
         // Opening leg (either first-in-position or add to existing side).
         queue.push({
           side: order.side,
