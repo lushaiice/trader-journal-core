@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { History, PlusCircle, Search, Loader2 } from "lucide-react";
+import { History, PlusCircle, Search, Loader2, Upload } from "lucide-react";
 import { isAfter, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { TradeCard } from "@/components/trades/trade-card";
 import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
+import { ImportTradesDialog } from "@/components/trades/import-trades-dialog";
 import { useTradesQuery } from "@/lib/trades/api";
 import { netPnl } from "@/lib/trades/calculations";
 
@@ -38,6 +39,7 @@ type SortKey = "latest" | "pnl";
 function Trades() {
   const { data, isLoading } = useTradesQuery();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [asset, setAsset] = useState<AssetFilter>("all");
   const [side, setSide] = useState<SideFilter>("all");
@@ -73,11 +75,16 @@ function Trades() {
         title="Trade History"
         description="Every trade you've logged."
         action={
-          <Button asChild size="sm">
-            <Link to="/add-trade">
-              <PlusCircle className="h-4 w-4 mr-2" /> Add trade
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" /> Import from broker
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/add-trade">
+                <PlusCircle className="h-4 w-4 mr-2" /> Add trade
+              </Link>
+            </Button>
+          </div>
         }
       />
 
@@ -172,6 +179,7 @@ function Trades() {
       )}
 
       <TradeDetailModal tradeId={activeId} onClose={() => setActiveId(null)} />
+      <ImportTradesDialog open={importOpen} onOpenChange={setImportOpen} />
     </>
   );
 }
