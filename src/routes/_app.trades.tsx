@@ -179,6 +179,7 @@ function Trades() {
       )}
 
       <TradeDetailModal tradeId={activeId} onClose={() => setActiveId(null)} />
+      <ImportTradesDialog open={importOpen} onOpenChange={setImportOpen} />
     </>
   );
 }
