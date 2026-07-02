@@ -101,9 +101,7 @@ export function rowsToFills(parsed: ParsedCsv): {
     if (!r.success) {
       skippedRows.push({
         rowNumber,
-        reason: r.error.issues
-          .map((x) => `${x.path.join(".") || "row"}: ${x.message}`)
-          .join("; "),
+        reason: r.error.issues.map((x) => `${x.path.join(".") || "row"}: ${x.message}`).join("; "),
       });
       return;
     }
