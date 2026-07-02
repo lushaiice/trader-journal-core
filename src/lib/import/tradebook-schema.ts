@@ -36,6 +36,11 @@ const FO_HEADERS = [
 
 export type TradebookVariant = "equity" | "fo";
 
+export interface SkippedRow {
+  rowNumber: number; // 1-based, includes header row
+  reason: string;
+}
+
 const num = z.coerce.number().finite();
 const posNum = z.coerce.number().finite().positive();
 const side = z
@@ -71,21 +76,34 @@ export function detectVariant(headers: string[]): TradebookVariant {
   return hasExpiry ? "fo" : "equity";
 }
 
-/** Validate & normalise CSV rows into typed Fills. */
+/**
+ * Validate & normalise CSV rows into typed Fills.
+ * Individual bad rows are collected into `skippedRows` — only unreadable
+ * files (bad headers, zero valid rows) throw.
+ */
 export function rowsToFills(parsed: ParsedCsv): {
   variant: TradebookVariant;
   fills: Fill[];
+  skippedRows: SkippedRow[];
 } {
   const variant = detectVariant(parsed.headers);
   const fills: Fill[] = [];
+  const skippedRows: SkippedRow[] = [];
+
+  // Papaparse-flagged malformed rows first (truncated / ragged rows).
+  for (const rowNumber of parsed.malformedRowNumbers) {
+    skippedRows.push({ rowNumber, reason: "Row has wrong number of fields (likely truncated)." });
+  }
+
   parsed.rows.forEach((raw, i) => {
+    const rowNumber = i + 2; // 1-based including header
     const r = rowSchema.safeParse(raw);
     if (!r.success) {
-      throw new Error(
-        `Row ${i + 2}: ${r.error.issues
-          .map((x) => `${x.path.join(".") || "row"}: ${x.message}`)
-          .join("; ")}`,
-      );
+      skippedRows.push({
+        rowNumber,
+        reason: r.error.issues.map((x) => `${x.path.join(".") || "row"}: ${x.message}`).join("; "),
+      });
+      return;
     }
     const v = r.data;
     fills.push({
@@ -101,5 +119,12 @@ export function rowsToFills(parsed: ParsedCsv): {
       order_execution_time: v.order_execution_time,
     });
   });
-  return { variant, fills };
+
+  if (fills.length === 0) {
+    throw new Error(
+      "No valid trade rows found in this file. Check that it's an unmodified Zerodha Console tradebook export.",
+    );
+  }
+
+  return { variant, fills, skippedRows };
 }

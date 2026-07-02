@@ -22,7 +22,10 @@ async function persistImportedTrades(
 ): Promise<ImportOutcome> {
   if (trades.length === 0) return { imported: 0, skipped: 0 };
 
-  // 1. Look up existing fills for this user, one query.
+  // 1. Look up existing fills for this user, one query. These are the ONLY
+  //    fills that gate idempotency — a fill can legitimately map to two
+  //    reconstructed trades within one batch (FIFO-split partial close), so
+  //    within-batch collisions are not a "skip" signal.
   const allFillIds = Array.from(new Set(trades.flatMap((t) => t.source_fill_ids)));
   const { data: existing, error: existErr } = await supabase
     .from("imported_trade_fills")
@@ -30,13 +33,15 @@ async function persistImportedTrades(
     .eq("source", IMPORT_SOURCE)
     .in("source_fill_id", allFillIds);
   if (existErr) throw existErr;
-  const seen = new Set((existing ?? []).map((r) => r.source_fill_id));
+  const preExisting = new Set((existing ?? []).map((r) => r.source_fill_id));
 
   let imported = 0;
   let skipped = 0;
 
   for (const t of trades) {
-    if (t.source_fill_ids.some((id) => seen.has(id))) {
+    // Skip only if fills existed BEFORE this batch — i.e. we've imported
+    // this trade (or another using the same fill) on a previous run.
+    if (t.source_fill_ids.some((id) => preExisting.has(id))) {
       skipped++;
       continue;
     }
@@ -82,18 +87,21 @@ async function persistImportedTrades(
       if (exitErr) throw exitErr;
     }
 
-    const { error: fillErr } = await supabase.from("imported_trade_fills").insert(
+    // Upsert with ignoreDuplicates: a shared closing fill across two trades
+    // in the same batch is legitimate (FIFO split). The UNIQUE
+    // (user_id, source, source_fill_id) constraint still guarantees a fill
+    // is only ever recorded once — subsequent trades just don't re-record it.
+    const { error: fillErr } = await supabase.from("imported_trade_fills").upsert(
       t.source_fill_ids.map((id) => ({
         user_id: userId,
         trade_id: tradeId,
         source: IMPORT_SOURCE,
         source_fill_id: id,
       })),
+      { onConflict: "user_id,source,source_fill_id", ignoreDuplicates: true },
     );
     if (fillErr) throw fillErr;
 
-    // Track dedupe locally so a duplicate later in the batch also skips.
-    for (const id of t.source_fill_ids) seen.add(id);
     imported++;
   }
 
