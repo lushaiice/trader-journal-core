@@ -75,11 +75,16 @@ function Trades() {
         title="Trade History"
         description="Every trade you've logged."
         action={
-          <Button asChild size="sm">
-            <Link to="/add-trade">
-              <PlusCircle className="h-4 w-4 mr-2" /> Add trade
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" /> Import from broker
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/add-trade">
+                <PlusCircle className="h-4 w-4 mr-2" /> Add trade
+              </Link>
+            </Button>
+          </div>
         }
       />
 
