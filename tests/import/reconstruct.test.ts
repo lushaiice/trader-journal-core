@@ -123,6 +123,10 @@ describe("reconstructPositions", () => {
     expect(open.quantity).toBe(100);
     expect(open.entry_price).toBe(105);
     expect(open.exits[0].quantity).toBe(50);
+    // Split-fill: the shared closing fill must appear on BOTH reconstructed
+    // trades so downstream persistence can dedupe idempotently.
+    expect(closed.source_fill_ids).toContain("EQ:s1");
+    expect(open.source_fill_ids).toContain("EQ:s1");
   });
 
   it("emits an orphan when only a closing fill exists", () => {
