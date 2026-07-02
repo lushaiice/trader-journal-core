@@ -306,6 +306,41 @@ export type Database = {
         }
         Relationships: []
       }
+      imported_trade_fills: {
+        Row: {
+          created_at: string
+          id: string
+          source: string
+          source_fill_id: string
+          trade_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source: string
+          source_fill_id: string
+          trade_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source?: string
+          source_fill_id?: string
+          trade_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imported_trade_fills_trade_id_fkey"
+            columns: ["trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opening_positions: {
         Row: {
           acquisition_date: string
