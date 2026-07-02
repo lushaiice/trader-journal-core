@@ -39,6 +39,7 @@ type SortKey = "latest" | "pnl";
 function Trades() {
   const { data, isLoading } = useTradesQuery();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [asset, setAsset] = useState<AssetFilter>("all");
   const [side, setSide] = useState<SideFilter>("all");
