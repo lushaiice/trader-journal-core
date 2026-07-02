@@ -25,9 +25,7 @@ export function groupFillsIntoOrders(fills: Fill[]): Order[] {
     const first = group[0];
     const sides = new Set(group.map((g) => g.trade_type));
     if (sides.size > 1) {
-      throw new Error(
-        `Order ${order_id} has mixed buy/sell fills — cannot reconstruct.`,
-      );
+      throw new Error(`Order ${order_id} has mixed buy/sell fills — cannot reconstruct.`);
     }
     let totalQty = 0;
     let notional = 0;

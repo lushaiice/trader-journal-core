@@ -23,9 +23,7 @@ async function persistImportedTrades(
   if (trades.length === 0) return { imported: 0, skipped: 0 };
 
   // 1. Look up existing fills for this user, one query.
-  const allFillIds = Array.from(
-    new Set(trades.flatMap((t) => t.source_fill_ids)),
-  );
+  const allFillIds = Array.from(new Set(trades.flatMap((t) => t.source_fill_ids)));
   const { data: existing, error: existErr } = await supabase
     .from("imported_trade_fills")
     .select("source_fill_id")
@@ -45,11 +43,7 @@ async function persistImportedTrades(
 
     const exitsTotal = t.exits.reduce((a, e) => a + e.quantity, 0);
     const status =
-      exitsTotal <= 0
-        ? "open"
-        : exitsTotal >= t.quantity - 1e-9
-          ? "closed"
-          : "partial";
+      exitsTotal <= 0 ? "open" : exitsTotal >= t.quantity - 1e-9 ? "closed" : "partial";
 
     const { data: inserted, error: tradeErr } = await supabase
       .from("trades")
@@ -88,16 +82,14 @@ async function persistImportedTrades(
       if (exitErr) throw exitErr;
     }
 
-    const { error: fillErr } = await supabase
-      .from("imported_trade_fills")
-      .insert(
-        t.source_fill_ids.map((id) => ({
-          user_id: userId,
-          trade_id: tradeId,
-          source: IMPORT_SOURCE,
-          source_fill_id: id,
-        })),
-      );
+    const { error: fillErr } = await supabase.from("imported_trade_fills").insert(
+      t.source_fill_ids.map((id) => ({
+        user_id: userId,
+        trade_id: tradeId,
+        source: IMPORT_SOURCE,
+        source_fill_id: id,
+      })),
+    );
     if (fillErr) throw fillErr;
 
     // Track dedupe locally so a duplicate later in the batch also skips.

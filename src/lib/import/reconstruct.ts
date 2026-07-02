@@ -1,10 +1,4 @@
-import type {
-  Order,
-  Orphan,
-  ReconstructedTrade,
-  ReconstructionResult,
-  Side,
-} from "./types";
+import type { Order, Orphan, ReconstructedTrade, ReconstructionResult, Side } from "./types";
 import { classifyInstrument } from "./symbol";
 
 /** Position key: symbol for EQ, symbol|expiry for FO (variant supplies hasExpiry). */
@@ -78,8 +72,7 @@ export function reconstructPositions(
       const openSide = queue[0]?.side;
       // For equity, a lone sell with no open lot is a pre-window holding.
       // For F&O, sell-to-open is legitimate.
-      const canOpenHere =
-        !openSide && (hasExpiryColumn || order.side === "buy");
+      const canOpenHere = !openSide && (hasExpiryColumn || order.side === "buy");
       const addingToSameSide = !!openSide && order.side === openSide;
 
       if (canOpenHere || addingToSameSide) {

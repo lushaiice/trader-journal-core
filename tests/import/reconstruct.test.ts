@@ -21,8 +21,22 @@ describe("reconstructPositions", () => {
   it("closes a simple long round-trip", () => {
     const { trades, orphans } = reconstructPositions(
       [
-        o({ order_id: "o1", side: "buy", quantity: 10, avg_price: 100, execution_time: "2025-01-02T09:00:00", source_fill_ids: ["EQ:t1"] }),
-        o({ order_id: "o2", side: "sell", quantity: 10, avg_price: 120, execution_time: "2025-01-02T14:00:00", source_fill_ids: ["EQ:t2"] }),
+        o({
+          order_id: "o1",
+          side: "buy",
+          quantity: 10,
+          avg_price: 100,
+          execution_time: "2025-01-02T09:00:00",
+          source_fill_ids: ["EQ:t1"],
+        }),
+        o({
+          order_id: "o2",
+          side: "sell",
+          quantity: 10,
+          avg_price: 120,
+          execution_time: "2025-01-02T14:00:00",
+          source_fill_ids: ["EQ:t2"],
+        }),
       ],
       false,
     );
@@ -37,8 +51,28 @@ describe("reconstructPositions", () => {
   it("handles short-to-open options: sell then buy → closed short", () => {
     const { trades } = reconstructPositions(
       [
-        o({ order_id: "o1", side: "sell", symbol: "NIFTY24450PE", segment: "FO", expiry_date: "2025-09-16", quantity: 75, avg_price: 120, execution_time: "2025-09-15T09:20:00", source_fill_ids: ["FO:t1"] }),
-        o({ order_id: "o2", side: "buy",  symbol: "NIFTY24450PE", segment: "FO", expiry_date: "2025-09-16", quantity: 75, avg_price: 80,  execution_time: "2025-09-16T10:15:00", source_fill_ids: ["FO:t2"] }),
+        o({
+          order_id: "o1",
+          side: "sell",
+          symbol: "NIFTY24450PE",
+          segment: "FO",
+          expiry_date: "2025-09-16",
+          quantity: 75,
+          avg_price: 120,
+          execution_time: "2025-09-15T09:20:00",
+          source_fill_ids: ["FO:t1"],
+        }),
+        o({
+          order_id: "o2",
+          side: "buy",
+          symbol: "NIFTY24450PE",
+          segment: "FO",
+          expiry_date: "2025-09-16",
+          quantity: 75,
+          avg_price: 80,
+          execution_time: "2025-09-16T10:15:00",
+          source_fill_ids: ["FO:t2"],
+        }),
       ],
       true,
     );
@@ -52,9 +86,30 @@ describe("reconstructPositions", () => {
   it("splits an over-buying position into closed + open", () => {
     const { trades } = reconstructPositions(
       [
-        o({ order_id: "b1", side: "buy", quantity: 100, avg_price: 100, execution_time: "2025-01-02T09:00:00", source_fill_ids: ["EQ:b1"] }),
-        o({ order_id: "b2", side: "buy", quantity: 100, avg_price: 105, execution_time: "2025-01-02T10:00:00", source_fill_ids: ["EQ:b2"] }),
-        o({ order_id: "s1", side: "sell", quantity: 150, avg_price: 120, execution_time: "2025-01-02T14:00:00", source_fill_ids: ["EQ:s1"] }),
+        o({
+          order_id: "b1",
+          side: "buy",
+          quantity: 100,
+          avg_price: 100,
+          execution_time: "2025-01-02T09:00:00",
+          source_fill_ids: ["EQ:b1"],
+        }),
+        o({
+          order_id: "b2",
+          side: "buy",
+          quantity: 100,
+          avg_price: 105,
+          execution_time: "2025-01-02T10:00:00",
+          source_fill_ids: ["EQ:b2"],
+        }),
+        o({
+          order_id: "s1",
+          side: "sell",
+          quantity: 150,
+          avg_price: 120,
+          execution_time: "2025-01-02T14:00:00",
+          source_fill_ids: ["EQ:s1"],
+        }),
       ],
       false,
     );
@@ -73,7 +128,14 @@ describe("reconstructPositions", () => {
   it("emits an orphan when only a closing fill exists", () => {
     const { trades, orphans } = reconstructPositions(
       [
-        o({ order_id: "s1", side: "sell", quantity: 25, avg_price: 500, execution_time: "2025-01-02T10:00:00", source_fill_ids: ["EQ:s1"] }),
+        o({
+          order_id: "s1",
+          side: "sell",
+          quantity: 25,
+          avg_price: 500,
+          execution_time: "2025-01-02T10:00:00",
+          source_fill_ids: ["EQ:s1"],
+        }),
       ],
       false,
     );
@@ -86,10 +148,38 @@ describe("reconstructPositions", () => {
   it("treats re-entries after flat as separate trades", () => {
     const { trades } = reconstructPositions(
       [
-        o({ order_id: "b1", side: "buy",  quantity: 10, avg_price: 100, execution_time: "2025-01-02T09:00:00", source_fill_ids: ["EQ:1"] }),
-        o({ order_id: "s1", side: "sell", quantity: 10, avg_price: 110, execution_time: "2025-01-02T10:00:00", source_fill_ids: ["EQ:2"] }),
-        o({ order_id: "b2", side: "buy",  quantity: 10, avg_price: 105, execution_time: "2025-01-02T11:00:00", source_fill_ids: ["EQ:3"] }),
-        o({ order_id: "s2", side: "sell", quantity: 10, avg_price: 108, execution_time: "2025-01-02T12:00:00", source_fill_ids: ["EQ:4"] }),
+        o({
+          order_id: "b1",
+          side: "buy",
+          quantity: 10,
+          avg_price: 100,
+          execution_time: "2025-01-02T09:00:00",
+          source_fill_ids: ["EQ:1"],
+        }),
+        o({
+          order_id: "s1",
+          side: "sell",
+          quantity: 10,
+          avg_price: 110,
+          execution_time: "2025-01-02T10:00:00",
+          source_fill_ids: ["EQ:2"],
+        }),
+        o({
+          order_id: "b2",
+          side: "buy",
+          quantity: 10,
+          avg_price: 105,
+          execution_time: "2025-01-02T11:00:00",
+          source_fill_ids: ["EQ:3"],
+        }),
+        o({
+          order_id: "s2",
+          side: "sell",
+          quantity: 10,
+          avg_price: 108,
+          execution_time: "2025-01-02T12:00:00",
+          source_fill_ids: ["EQ:4"],
+        }),
       ],
       false,
     );

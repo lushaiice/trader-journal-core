@@ -6,10 +6,7 @@ import type { InstrumentType } from "./types";
  * We store the full tradingsymbol verbatim. Parsing strike / expiry / right
  * out of the symbol string (e.g. NIFTY2591624450PE) is future work.
  */
-export function classifyInstrument(
-  symbol: string,
-  hasExpiryColumn: boolean,
-): InstrumentType {
+export function classifyInstrument(symbol: string, hasExpiryColumn: boolean): InstrumentType {
   if (!hasExpiryColumn) return "equity";
   const s = symbol.toUpperCase();
   if (s.endsWith("CE") || s.endsWith("PE")) return "options";

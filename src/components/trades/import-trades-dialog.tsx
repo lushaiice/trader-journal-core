@@ -131,8 +131,8 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>Import from Zerodha</DialogTitle>
           <DialogDescription>
-            Upload a Zerodha Console Tradebook CSV. We&rsquo;ll reconstruct your fills
-            into round-trip trades. Fills already imported are skipped automatically.
+            Upload a Zerodha Console Tradebook CSV. We&rsquo;ll reconstruct your fills into
+            round-trip trades. Fills already imported are skipped automatically.
           </DialogDescription>
         </DialogHeader>
 
@@ -183,9 +183,18 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
             )}
             <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">A few things to know:</p>
-              <p>· Zerodha tradebooks contain no charges, so imported P&amp;L is <span className="text-foreground">gross</span> — before brokerage &amp; taxes.</p>
-              <p>· Closing fills whose opening trade is outside the export window are skipped and listed for review.</p>
-              <p>· Export a wider date range so entries and exits both fall inside the file for cleanest reconstruction.</p>
+              <p>
+                · Zerodha tradebooks contain no charges, so imported P&amp;L is{" "}
+                <span className="text-foreground">gross</span> — before brokerage &amp; taxes.
+              </p>
+              <p>
+                · Closing fills whose opening trade is outside the export window are skipped and
+                listed for review.
+              </p>
+              <p>
+                · Export a wider date range so entries and exits both fall inside the file for
+                cleanest reconstruction.
+              </p>
             </div>
           </div>
         )}
@@ -205,7 +214,7 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
 
             {dateRange && (
               <div className="text-xs text-muted-foreground">
-                {preview.fillCount} fills · {preview.variant === "fo" ? "F&O" : "Equity"} · {" "}
+                {preview.fillCount} fills · {preview.variant === "fo" ? "F&O" : "Equity"} ·{" "}
                 {fmtDate(dateRange.from)} → {fmtDate(dateRange.to)}
                 {preview.fillCount > 50000 && (
                   <span className="ml-2 text-amber-600 dark:text-amber-400">
@@ -246,9 +255,7 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
                                 : "text-destructive"
                           }`}
                         >
-                          {t.kind === "open" && t.exits.length === 0
-                            ? "—"
-                            : formatINR(t.gross_pnl)}
+                          {t.kind === "open" && t.exits.length === 0 ? "—" : formatINR(t.gross_pnl)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={t.kind === "closed" ? "secondary" : "outline"}>
@@ -293,7 +300,8 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
                         >
                           <span className="font-medium">{o.symbol}</span>
                           <span className="text-muted-foreground">
-                            {o.side} {o.quantity} @ {o.price.toFixed(2)} · {fmtDate(o.execution_time)}
+                            {o.side} {o.quantity} @ {o.price.toFixed(2)} ·{" "}
+                            {fmtDate(o.execution_time)}
                           </span>
                         </div>
                       ))}
