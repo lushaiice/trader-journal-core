@@ -41,18 +41,18 @@ export function tradeStatus(
   return "partial";
 }
 
-/** Gross P&L before fees, signed by side.
- *  Uses per-exit `entry_price` (per-lot FIFO basis) when available, otherwise
- *  falls back to the trade's weighted-average entry price. */
+/** Gross P&L before fees, signed by side. */
 export function grossPnl(trade: TradeRow, exits: ExitRow[]): number {
   const sign = trade.side === "long" ? 1 : -1;
-  return exits.reduce((acc, e) => {
-    const basis =
-      e.entry_price != null ? Number(e.entry_price) : Number(trade.entry_price);
-    return acc + (Number(e.exit_price) - basis) * Number(e.quantity) * sign;
-  }, 0);
+  return exits.reduce(
+    (acc, e) =>
+      acc +
+      (Number(e.exit_price) - Number(trade.entry_price)) *
+        Number(e.quantity) *
+        sign,
+    0,
+  );
 }
-
 
 /** Total fees: entry costs + per-exit fees. */
 export function totalFees(trade: TradeRow, exits: ExitRow[]): number {

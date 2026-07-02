@@ -24,7 +24,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { TradeForm } from "./trade-form";
 import { PostTradeReview } from "./post-trade-review";
-import { GrossPnlBadge } from "./gross-pnl-badge";
 import { useTradeQuery, useDeleteTrade, type TradeWithRelations } from "@/lib/trades/api";
 import { useScreenshotUrl } from "@/hooks/trades/use-screenshot-url";
 import { EMOTIONAL_QUESTIONS } from "@/lib/trades/constants";
@@ -119,30 +118,17 @@ export function TradeDetailModal({ tradeId, onClose }: Props) {
   );
 }
 
-function Stat({
-  label,
-  value,
-  tone,
-  extra,
-}: {
-  label: string;
-  value: string;
-  tone?: "good" | "bad";
-  extra?: React.ReactNode;
-}) {
+function Stat({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
   return (
     <div className="rounded-lg border border-border bg-muted/20 px-3 py-2.5">
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <div className="flex items-center justify-between gap-2 mt-0.5">
-        <p
-          className={`text-sm font-semibold tabular-nums ${
-            tone === "good" ? "text-success" : tone === "bad" ? "text-destructive" : ""
-          }`}
-        >
-          {value}
-        </p>
-        {extra}
-      </div>
+      <p
+        className={`text-sm font-semibold tabular-nums mt-0.5 ${
+          tone === "good" ? "text-success" : tone === "bad" ? "text-destructive" : ""
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -192,19 +178,7 @@ function DetailView({
       </DialogHeader>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
-        <Stat
-          label="Net P&L"
-          value={formatINR(pnl)}
-          tone={pnl >= 0 ? "good" : "bad"}
-          extra={
-            <GrossPnlBadge
-              source={trade.source}
-              brokerage={trade.brokerage}
-              taxes={trade.taxes}
-              other_fees={trade.other_fees}
-            />
-          }
-        />
+        <Stat label="Net P&L" value={formatINR(pnl)} tone={pnl >= 0 ? "good" : "bad"} />
         <Stat label="R Multiple" value={r !== null ? `${r.toFixed(2)}R` : "—"} />
         <Stat label="Discipline" value={ds !== null ? `${ds}%` : "—"} />
         <Stat label="Status" value={trade.status} />

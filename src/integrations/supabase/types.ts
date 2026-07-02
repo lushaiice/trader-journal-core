@@ -14,41 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      broker_fills: {
-        Row: {
-          broker: string
-          broker_trade_id: string
-          created_at: string
-          id: string
-          imported_trade_id: string | null
-          user_id: string
-        }
-        Insert: {
-          broker?: string
-          broker_trade_id: string
-          created_at?: string
-          id?: string
-          imported_trade_id?: string | null
-          user_id: string
-        }
-        Update: {
-          broker?: string
-          broker_trade_id?: string
-          created_at?: string
-          id?: string
-          imported_trade_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "broker_fills_imported_trade_id_fkey"
-            columns: ["imported_trade_id"]
-            isOneToOne: false
-            referencedRelation: "trades"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       capital_events: {
         Row: {
           amount: number
@@ -110,45 +75,6 @@ export type Database = {
           log_date?: string
           notes?: string | null
           readiness_score?: number | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      corporate_actions: {
-        Row: {
-          action_type: string
-          created_at: string
-          ex_date: string
-          id: string
-          notes: string | null
-          ratio_from: number
-          ratio_to: number
-          symbol: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          action_type: string
-          created_at?: string
-          ex_date: string
-          id?: string
-          notes?: string | null
-          ratio_from: number
-          ratio_to: number
-          symbol: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          action_type?: string
-          created_at?: string
-          ex_date?: string
-          id?: string
-          notes?: string | null
-          ratio_from?: number
-          ratio_to?: number
-          symbol?: string
           updated_at?: string
           user_id?: string
         }
@@ -306,75 +232,6 @@ export type Database = {
         }
         Relationships: []
       }
-      opening_positions: {
-        Row: {
-          acquisition_date: string
-          avg_cost: number
-          created_at: string
-          id: string
-          notes: string | null
-          quantity: number
-          side: string
-          symbol: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          acquisition_date: string
-          avg_cost: number
-          created_at?: string
-          id?: string
-          notes?: string | null
-          quantity: number
-          side: string
-          symbol: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          acquisition_date?: string
-          avg_cost?: number
-          created_at?: string
-          id?: string
-          notes?: string | null
-          quantity?: number
-          side?: string
-          symbol?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      playbooks: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          rules: Json | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          rules?: Json | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          rules?: Json | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       portfolios: {
         Row: {
           base_capital: number | null
@@ -518,9 +375,7 @@ export type Database = {
       }
       trade_exits: {
         Row: {
-          broker_trade_id: string | null
           created_at: string
-          entry_price: number | null
           exit_date: string
           exit_price: number
           fees: number | null
@@ -531,9 +386,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          broker_trade_id?: string | null
           created_at?: string
-          entry_price?: number | null
           exit_date?: string
           exit_price: number
           fees?: number | null
@@ -544,9 +397,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          broker_trade_id?: string | null
           created_at?: string
-          entry_price?: number | null
           exit_date?: string
           exit_price?: number
           fees?: number | null
@@ -576,8 +427,6 @@ export type Database = {
           emotion_tags: string[] | null
           entry_date: string
           entry_price: number
-          entry_time: string | null
-          external_ref: string | null
           id: string
           instrument_type: string
           lessons_learned: string | null
@@ -586,7 +435,6 @@ export type Database = {
           planned_entry: number | null
           planned_stop_loss: number | null
           planned_target: number | null
-          playbook_id: string | null
           portfolio_id: string | null
           quantity: number
           recovery_urge: number | null
@@ -595,7 +443,6 @@ export type Database = {
           setup: string | null
           setup_match: number | null
           side: string
-          source: string
           status: string
           stop_loss: number | null
           strategy: string | null
@@ -615,8 +462,6 @@ export type Database = {
           emotion_tags?: string[] | null
           entry_date?: string
           entry_price: number
-          entry_time?: string | null
-          external_ref?: string | null
           id?: string
           instrument_type?: string
           lessons_learned?: string | null
@@ -625,7 +470,6 @@ export type Database = {
           planned_entry?: number | null
           planned_stop_loss?: number | null
           planned_target?: number | null
-          playbook_id?: string | null
           portfolio_id?: string | null
           quantity: number
           recovery_urge?: number | null
@@ -634,7 +478,6 @@ export type Database = {
           setup?: string | null
           setup_match?: number | null
           side?: string
-          source?: string
           status?: string
           stop_loss?: number | null
           strategy?: string | null
@@ -654,8 +497,6 @@ export type Database = {
           emotion_tags?: string[] | null
           entry_date?: string
           entry_price?: number
-          entry_time?: string | null
-          external_ref?: string | null
           id?: string
           instrument_type?: string
           lessons_learned?: string | null
@@ -664,7 +505,6 @@ export type Database = {
           planned_entry?: number | null
           planned_stop_loss?: number | null
           planned_target?: number | null
-          playbook_id?: string | null
           portfolio_id?: string | null
           quantity?: number
           recovery_urge?: number | null
@@ -673,7 +513,6 @@ export type Database = {
           setup?: string | null
           setup_match?: number | null
           side?: string
-          source?: string
           status?: string
           stop_loss?: number | null
           strategy?: string | null
@@ -685,13 +524,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "trades_playbook_id_fkey"
-            columns: ["playbook_id"]
-            isOneToOne: false
-            referencedRelation: "playbooks"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "trades_portfolio_id_fkey"
             columns: ["portfolio_id"]

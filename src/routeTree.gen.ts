@@ -16,15 +16,11 @@ import { Route as AppWeeklyReviewRouteImport } from './routes/_app.weekly-review
 import { Route as AppTradesRouteImport } from './routes/_app.trades'
 import { Route as AppTodayRouteImport } from './routes/_app.today'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppPlaybooksRouteImport } from './routes/_app.playbooks'
 import { Route as AppJournalTimelineRouteImport } from './routes/_app.journal-timeline'
-import { Route as AppImportRouteImport } from './routes/_app.import'
-import { Route as AppHoldingsRouteImport } from './routes/_app.holdings'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCapitalRouteImport } from './routes/_app.capital'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppAddTradeRouteImport } from './routes/_app.add-trade'
-import { Route as AppImportReconcileRouteImport } from './routes/_app.import.reconcile'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -60,24 +56,9 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppPlaybooksRoute = AppPlaybooksRouteImport.update({
-  id: '/playbooks',
-  path: '/playbooks',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppJournalTimelineRoute = AppJournalTimelineRouteImport.update({
   id: '/journal-timeline',
   path: '/journal-timeline',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppImportRoute = AppImportRouteImport.update({
-  id: '/import',
-  path: '/import',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppHoldingsRoute = AppHoldingsRouteImport.update({
-  id: '/holdings',
-  path: '/holdings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -100,11 +81,6 @@ const AppAddTradeRoute = AppAddTradeRouteImport.update({
   path: '/add-trade',
   getParentRoute: () => AppRoute,
 } as any)
-const AppImportReconcileRoute = AppImportReconcileRouteImport.update({
-  id: '/reconcile',
-  path: '/reconcile',
-  getParentRoute: () => AppImportRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -113,15 +89,11 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
-  '/holdings': typeof AppHoldingsRoute
-  '/import': typeof AppImportRouteWithChildren
   '/journal-timeline': typeof AppJournalTimelineRoute
-  '/playbooks': typeof AppPlaybooksRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
   '/trades': typeof AppTradesRoute
   '/weekly-review': typeof AppWeeklyReviewRoute
-  '/import/reconcile': typeof AppImportReconcileRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -130,15 +102,11 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
-  '/holdings': typeof AppHoldingsRoute
-  '/import': typeof AppImportRouteWithChildren
   '/journal-timeline': typeof AppJournalTimelineRoute
-  '/playbooks': typeof AppPlaybooksRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
   '/trades': typeof AppTradesRoute
   '/weekly-review': typeof AppWeeklyReviewRoute
-  '/import/reconcile': typeof AppImportReconcileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -149,15 +117,11 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/capital': typeof AppCapitalRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/holdings': typeof AppHoldingsRoute
-  '/_app/import': typeof AppImportRouteWithChildren
   '/_app/journal-timeline': typeof AppJournalTimelineRoute
-  '/_app/playbooks': typeof AppPlaybooksRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/today': typeof AppTodayRoute
   '/_app/trades': typeof AppTradesRoute
   '/_app/weekly-review': typeof AppWeeklyReviewRoute
-  '/_app/import/reconcile': typeof AppImportReconcileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -168,15 +132,11 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/capital'
     | '/dashboard'
-    | '/holdings'
-    | '/import'
     | '/journal-timeline'
-    | '/playbooks'
     | '/settings'
     | '/today'
     | '/trades'
     | '/weekly-review'
-    | '/import/reconcile'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -185,15 +145,11 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/capital'
     | '/dashboard'
-    | '/holdings'
-    | '/import'
     | '/journal-timeline'
-    | '/playbooks'
     | '/settings'
     | '/today'
     | '/trades'
     | '/weekly-review'
-    | '/import/reconcile'
   id:
     | '__root__'
     | '/'
@@ -203,15 +159,11 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/capital'
     | '/_app/dashboard'
-    | '/_app/holdings'
-    | '/_app/import'
     | '/_app/journal-timeline'
-    | '/_app/playbooks'
     | '/_app/settings'
     | '/_app/today'
     | '/_app/trades'
     | '/_app/weekly-review'
-    | '/_app/import/reconcile'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -271,32 +223,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/playbooks': {
-      id: '/_app/playbooks'
-      path: '/playbooks'
-      fullPath: '/playbooks'
-      preLoaderRoute: typeof AppPlaybooksRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/journal-timeline': {
       id: '/_app/journal-timeline'
       path: '/journal-timeline'
       fullPath: '/journal-timeline'
       preLoaderRoute: typeof AppJournalTimelineRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/import': {
-      id: '/_app/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof AppImportRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/holdings': {
-      id: '/_app/holdings'
-      path: '/holdings'
-      fullPath: '/holdings'
-      preLoaderRoute: typeof AppHoldingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -327,37 +258,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAddTradeRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/import/reconcile': {
-      id: '/_app/import/reconcile'
-      path: '/reconcile'
-      fullPath: '/import/reconcile'
-      preLoaderRoute: typeof AppImportReconcileRouteImport
-      parentRoute: typeof AppImportRoute
-    }
   }
 }
-
-interface AppImportRouteChildren {
-  AppImportReconcileRoute: typeof AppImportReconcileRoute
-}
-
-const AppImportRouteChildren: AppImportRouteChildren = {
-  AppImportReconcileRoute: AppImportReconcileRoute,
-}
-
-const AppImportRouteWithChildren = AppImportRoute._addFileChildren(
-  AppImportRouteChildren,
-)
 
 interface AppRouteChildren {
   AppAddTradeRoute: typeof AppAddTradeRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCapitalRoute: typeof AppCapitalRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppHoldingsRoute: typeof AppHoldingsRoute
-  AppImportRoute: typeof AppImportRouteWithChildren
   AppJournalTimelineRoute: typeof AppJournalTimelineRoute
-  AppPlaybooksRoute: typeof AppPlaybooksRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTodayRoute: typeof AppTodayRoute
   AppTradesRoute: typeof AppTradesRoute
@@ -369,10 +278,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCapitalRoute: AppCapitalRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppHoldingsRoute: AppHoldingsRoute,
-  AppImportRoute: AppImportRouteWithChildren,
   AppJournalTimelineRoute: AppJournalTimelineRoute,
-  AppPlaybooksRoute: AppPlaybooksRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTodayRoute: AppTodayRoute,
   AppTradesRoute: AppTradesRoute,

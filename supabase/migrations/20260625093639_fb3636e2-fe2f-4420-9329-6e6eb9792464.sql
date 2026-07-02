@@ -1,2 +1,0 @@
-ALTER TABLE public.trade_exits ADD COLUMN IF NOT EXISTS entry_price numeric(14,4);
-COMMENT ON COLUMN public.trade_exits.entry_price IS 'Per-lot FIFO cost basis matched against this exit slice. When null, fall back to trades.entry_price (legacy / non-imported exits).';

@@ -1,60 +1,43 @@
 
-# Make realized P&L match the broker
+## Goal
+Let users switch between light, dark, and system themes. Currently the app is hard-coded dark (`<html className="dark">` in `__root.tsx`, and `:root` in `src/styles.css` duplicates the dark palette).
 
-The Net P&L on the dashboard is **−₹89,399** while Zerodha's statement for the same period shows realized **−₹24,946**. The ₹64.5K gap is not a charges issue — every fee in our CSV is 0. It comes from five concrete bugs in how we reconstruct trades from the Zerodha tradebook.
+## Changes
 
-## The five causes (sized against your actual data)
+### 1. Design tokens — `src/styles.css`
+- Replace `:root` block with a true **light** palette (calm, premium, minimal — matching the Traders' OS aesthetic): near-white background, dark slate foreground, same primary blue, success/warning/destructive tuned for light surfaces, lighter sidebar, adjusted chart colors for legibility.
+- Keep the existing dark palette under `.dark` (already correct).
+- Remove `color-scheme: dark` hard-coding from `html`; instead set `color-scheme: light dark` and let the `.dark` class drive it via a `.dark { color-scheme: dark }` rule.
 
-1. **Per-position closing instead of per-lot FIFO (~₹17K).**
-   Our aggregator only books realized P&L when a symbol's net quantity returns to zero. Brokers (and Zerodha's tax statement) book realized P&L on **every sell**, matched FIFO against the oldest unsold buy lots, even while the overall position stays open.
-   Effect today: METALIETF (+₹9,808) and PHARMABEES (+₹7,237) show 0 P&L for us because they're still partially open; broker has already realized profit on the portions sold.
+### 2. Theme provider — new `src/lib/theme-context.tsx`
+- `ThemeProvider` with `theme: "light" | "dark" | "system"`, `resolvedTheme: "light" | "dark"`.
+- Persist choice in `localStorage` under `trader-os:theme`.
+- On mount and on change, toggle `.dark` class on `document.documentElement`.
+- Listen to `matchMedia("(prefers-color-scheme: dark)")` when in `system` mode.
+- SSR-safe: default to `system`, no window access at module scope.
+- Inline `<script>` injected via root `head` to set the class before hydration (prevents flash of wrong theme).
 
-2. **MTF / `-BL` series merged into the main symbol (~₹0 net, but distorts every per-symbol view).**
-   Zerodha tags margin-funded buys with the `-BL` series and treats `AXISBANK-BL` as a different security from `AXISBANK` for FIFO purposes. We uppercase and merge them, so a buy under `-BL` gets matched against a regular sell (or vice versa), producing wrong cost basis on both sides.
-   Visible in: AXISBANK / AXISBANK-BL, HINDUNILVR / HINDUNILVR-BL, SUNPHARMA, ASIANPAINT, LT, TITAN.
+### 3. Wire provider — `src/routes/__root.tsx`
+- Remove `className="dark"` from `<html>`.
+- Add the anti-flash inline script in the shell `<head>`.
+- Wrap `<Outlet />` tree in `<ThemeProvider>` inside `RootComponent`.
 
-3. **Corporate actions not applied (~₹14K).**
-   Bonuses, splits, demergers and rights change the broker's cost basis and quantity automatically; the tradebook doesn't carry those adjustments. So a sell of a post-bonus quantity is matched against a pre-bonus higher per-share price on our side.
-   Visible in: TATAINVEST (−₹7,479 diff), ADANIPOWER (−₹6,166), PIDILITIND (−₹4,093), BEML (−₹3,675).
+### 4. Theme toggle UI — new `src/components/theme-toggle.tsx`
+- Dropdown menu (shadcn `DropdownMenu`) with Sun/Moon/Monitor icons and Light / Dark / System options.
+- Icon button suitable for both desktop sidebar footer and mobile header.
 
-4. **Pre-import opening positions missing (~₹26K, MCX alone).**
-   Anything bought before the first tradebook in our system has no cost basis. The first sell of such a holding either gets dropped as an `orphan_sell` warning or — if a later buy of the same symbol exists — paired against that newer (higher) buy. MCX is the loudest case: broker +₹2,935, ours −₹23,110.
+### 5. Surface the toggle — `src/components/app-shell.tsx`
+- Place `<ThemeToggle />` in the desktop sidebar footer (next to logout) and in the mobile header (next to logout).
 
-5. **Open trades excluded from realized totals (cosmetic but confusing).**
-   Trades flagged "open" contribute 0 to Net P&L even when they have realized portions (because of #1). After #1 is fixed, "open" trades will correctly show a non-zero realized P&L for their already-sold quantity.
+### 6. Settings page — `src/routes/_app.settings.tsx`
+- Add an "Appearance" section with the same three-way control (radio group or segmented buttons) bound to the theme context, so users can change it from settings as well.
 
-## What I'll build
+## Out of scope
+- No business-logic, route, or data changes.
+- Chart palette stays the same token names; only the values shift between themes via CSS variables, so charts adapt automatically.
+- No tests added/changed; no e2e changes (smoke title assertion still passes).
 
-### Phase 1 — Per-lot FIFO realized P&L (biggest single win)
-Rewrite `src/lib/trades/import/aggregate.ts` to keep a FIFO queue of open buy lots per (symbol, series, instrument_type) and crystallize a realized exit on every sell, regardless of whether net position reaches zero. Each crystallized exit becomes a `trade_exits` row tied to the originating buy lot.
-
-Two presentational changes follow:
-- A trade's `status` becomes `closed` only when its entire entry quantity is exited (matches today); but `gross_pnl` for an open trade now includes realized P&L on already-sold portions.
-- The dashboard's Net P&L sums realized P&L across **all** trades (open + closed), not just closed.
-
-Migration: re-run import on existing `csv_import` trades; manual trades untouched.
-
-### Phase 2 — Series-aware symbol key
-Preserve the Zerodha `series` (`EQ`, `BL`, `BE`, `BZ`, `IL`) on the `Fill` and on the trade row, and key the FIFO state on `(symbol, series)` instead of `symbol` alone. Display name stays the bare symbol; FIFO and dedup respect the series.
-
-### Phase 3 — Pre-import opening balances
-Add a one-time "starting holdings" CSV importer (symbol, qty, avg cost, acquisition date) that seeds the FIFO queue before the tradebook is applied. Wired into `/import` as an optional first step. Replaces the current `orphan_sell` warning path for those symbols.
-
-### Phase 4 — Corporate-action adjustments
-New `corporate_actions` table (`symbol, ex_date, action_type, ratio_from, ratio_to, notes`). The FIFO replay reads it and rewrites lot quantity + cost basis at the ex-date. Seed with a manual entry UI on the trade row — no auto-fetch yet. Covers splits, bonuses, and consolidations; demergers and rights stay manual.
-
-### Phase 5 — Reconciliation report
-A `/import/reconcile` view that diffs our per-symbol realized P&L against the uploaded Zerodha P&L XLSX and lists the rows that still disagree, with the suspected cause (corporate action / opening position / series mismatch / charges). Confirms phases 1–4 worked and surfaces the long tail.
-
-## Out of scope for this plan
-
-- Live LTP + unrealized P&L tile (separate work the user already deferred).
-- Other Credit & Debit lines (dividends, DP charges, MTF interest, AMC, buyback) — needs the funds ledger, not the tradebook.
-- Auto-fetching corporate actions from NSE/BSE (manual seed first; auto-fetch later if useful).
-- Currency / commodity segments (still intentionally skipped).
-
-## Suggested order
-
-Build Phase 1 first and re-measure against the Zerodha XLSX — that alone should pull the gap from ~₹64K down to ~₹40K. Then Phase 2 (cheap, removes noise on every per-symbol view). Then Phase 4 + 3 in either order. Phase 5 is the closing verification.
-
-Tell me to start with Phase 1, or to bundle Phases 1 + 2 in one pass.
+## Verification
+- Toggle in sidebar flips palette instantly; refresh preserves choice; "System" follows OS preference.
+- No flash of dark theme on initial load when light is selected.
+- `bunx tsc --noEmit` clean.

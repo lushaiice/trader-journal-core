@@ -2,7 +2,6 @@ import { format } from "date-fns";
 import { ArrowDownRight, ArrowUpRight, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { GrossPnlBadge } from "./gross-pnl-badge";
 import {
   disciplineScore,
   formatINR,
@@ -66,20 +65,12 @@ export function TradeCard({ trade, exits, discipline, onClick }: TradeCardProps)
           >
             {formatINR(pnl)}
           </p>
-          <div className="flex items-center justify-end gap-1.5 mt-0.5">
-            <GrossPnlBadge
-              source={trade.source}
-              brokerage={trade.brokerage}
-              taxes={trade.taxes}
-              other_fees={trade.other_fees}
-            />
-            {r !== null && (
-              <span className="text-[11px] text-muted-foreground tabular-nums">
-                {r >= 0 ? "+" : ""}
-                {r.toFixed(2)}R
-              </span>
-            )}
-          </div>
+          {r !== null && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
+              {r >= 0 ? "+" : ""}
+              {r.toFixed(2)}R
+            </p>
+          )}
         </div>
       </div>
 
