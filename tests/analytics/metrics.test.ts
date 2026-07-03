@@ -81,6 +81,18 @@ describe("analytics metrics", () => {
     expect(s.totalNetPnl).toBe(100);
   });
 
+  it("counts partial trades as open", () => {
+    const s = summarizeAnalytics([
+      trade({ status: "partial", filledQty: 5, netPnl: 50 }),
+      trade({ netPnl: 100 }),
+    ]);
+    expect(s.tradeCount).toBe(2);
+    expect(s.closedCount).toBe(1);
+    // partial still carries live exposure → counted as open
+    expect(s.openCount).toBe(1);
+    expect(s.wins).toBe(2);
+  });
+
   it("computes deterministic Sharpe-like ratio for stable returns", () => {
     const s = summarizeAnalytics([
       trade({ netPnl: 100 }),

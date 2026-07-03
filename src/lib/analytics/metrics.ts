@@ -71,7 +71,8 @@ export function summarizeAnalytics(trades: NormalizedTrade[]): AnalyticsSummary 
   return {
     tradeCount: trades.length,
     closedCount: trades.filter((t) => t.status === "closed").length,
-    openCount: trades.filter((t) => t.status === "open").length,
+    // Partially-closed positions still carry live exposure, so count them as open.
+    openCount: trades.filter((t) => t.status !== "closed").length,
     wins: wins.length,
     losses: losses.length,
     breakeven,
