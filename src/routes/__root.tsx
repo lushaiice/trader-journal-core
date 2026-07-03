@@ -119,8 +119,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
 
-          rel="stylesheet"
-        />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
