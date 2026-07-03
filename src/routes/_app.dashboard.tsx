@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AnalyticsDashboard } from "@/components/analytics";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
+import { ConsentNudge } from "@/components/consent-nudge";
 import { useTradesQuery } from "@/lib/trades/api";
 import { useCapitalState } from "@/hooks/capital";
 
@@ -50,6 +51,7 @@ function Dashboard() {
           <AnalyticsDashboard />
         </SectionErrorBoundary>
       </div>
+      <ConsentNudge />
     </>
   );
 }

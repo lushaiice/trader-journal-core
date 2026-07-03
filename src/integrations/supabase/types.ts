@@ -115,6 +115,36 @@ export type Database = {
         }
         Relationships: []
       }
+      communication_consent: {
+        Row: {
+          created_at: string
+          decision: string
+          email_opt_in: boolean
+          phone_number: string | null
+          sms_opt_in: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          email_opt_in?: boolean
+          phone_number?: string | null
+          sms_opt_in?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          email_opt_in?: boolean
+          phone_number?: string | null
+          sms_opt_in?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       corporate_actions: {
         Row: {
           action_type: string
