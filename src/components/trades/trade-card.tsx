@@ -35,7 +35,9 @@ export function TradeCard({ trade, exits, discipline, onClick }: TradeCardProps)
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-display font-semibold tracking-tight text-base md:text-lg">{trade.symbol}</span>
+            <span className="font-display font-semibold tracking-tight text-base md:text-lg">
+              {trade.symbol}
+            </span>
             <Badge variant="secondary" className="eyebrow">
               {trade.instrument_type}
             </Badge>
@@ -72,7 +74,6 @@ export function TradeCard({ trade, exits, discipline, onClick }: TradeCardProps)
             </p>
           )}
         </div>
-
       </div>
 
       <div className="mt-3 flex items-center gap-3 flex-wrap">

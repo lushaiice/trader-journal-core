@@ -49,7 +49,6 @@ function Landing() {
       <footer className="px-6 py-6 text-center text-xs text-muted-foreground">
         No tips. No calls. No fake screenshots.
       </footer>
-
     </div>
   );
 }
