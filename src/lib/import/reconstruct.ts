@@ -123,8 +123,7 @@ function walkPosition(
       // Scale in — update volume-weighted average cost.
       const absPos = Math.abs(state.pos);
       state.avgCost =
-        (state.avgCost * absPos + order.avg_price * order.quantity) /
-        (absPos + order.quantity);
+        (state.avgCost * absPos + order.avg_price * order.quantity) / (absPos + order.quantity);
       state.pos += signedQty;
       state.openedQty += order.quantity;
       state.fills.push(...order.source_fill_ids);
@@ -151,9 +150,7 @@ function walkPosition(
       if (leftover > 1e-9) {
         if (isEquity && order.side === "sell") {
           // Cannot flip short in equity — leftover is orphan.
-          orphans.push(
-            makeOrphanQty(order, symbol, segment, expiry, leftover, "flip-excess"),
-          );
+          orphans.push(makeOrphanQty(order, symbol, segment, expiry, leftover, "flip-excess"));
         } else {
           // F&O flip: open a fresh position in the opposite direction.
           const signedLeftover = order.side === "buy" ? leftover : -leftover;
