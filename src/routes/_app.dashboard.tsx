@@ -27,7 +27,7 @@ function Dashboard() {
     <>
       <PageHeader
         title="Dashboard"
-        description="A calm overview of your performance, behavior, and discipline."
+        description="Every trade, including the losers. Show the proof, not the promise."
         action={
           <Button asChild size="sm">
             <Link to="/add-trade">
