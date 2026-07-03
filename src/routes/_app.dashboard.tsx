@@ -51,6 +51,7 @@ function Dashboard() {
           <AnalyticsDashboard />
         </SectionErrorBoundary>
       </div>
+      <ConsentNudge />
     </>
   );
 }
