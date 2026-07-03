@@ -198,6 +198,17 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
                 cleanest reconstruction.
               </p>
             </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Don&rsquo;t have a supported broker account yet?{" "}
+              <a
+                href="https://zerodha.com/open-account?c=ZMPUWK"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Get set up &rarr;
+              </a>
+            </p>
           </div>
         )}
 
