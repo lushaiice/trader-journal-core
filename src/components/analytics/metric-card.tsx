@@ -43,7 +43,7 @@ export function MetricCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-          <span className="text-[11px] uppercase tracking-wide text-muted-foreground truncate">
+          <span className="eyebrow text-muted-foreground truncate">
             {label}
           </span>
         </div>
@@ -64,11 +64,12 @@ export function MetricCard({
       </div>
       <p
         data-testid={valueTestId}
-        className={cn("text-xl md:text-2xl font-semibold tabular-nums tracking-tight", TONE[tone])}
+        className={cn("font-display text-xl md:text-2xl font-semibold tabular-nums tracking-tight", TONE[tone])}
       >
         {value}
       </p>
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
+
   );
 }

@@ -35,38 +35,40 @@ export function TradeCard({ trade, exits, discipline, onClick }: TradeCardProps)
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold tracking-tight text-base md:text-lg">{trade.symbol}</span>
-            <Badge variant="secondary" className="text-[10px] uppercase">
+            <span className="font-display font-semibold tracking-tight text-base md:text-lg">
+              {trade.symbol}
+            </span>
+            <Badge variant="secondary" className="eyebrow">
               {trade.instrument_type}
             </Badge>
             <span
               className={cn(
-                "inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded",
+                "inline-flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded font-mono",
                 long ? "text-success bg-success/10" : "text-destructive bg-destructive/10",
               )}
             >
               {long ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
               {long ? "Long" : "Short"}
             </span>
-            <Badge variant="outline" className="text-[10px] capitalize">
+            <Badge variant="outline" className="eyebrow">
               {trade.status}
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1 font-mono">
             {format(new Date(trade.entry_date), "dd MMM yyyy · HH:mm")}
           </p>
         </div>
         <div className="text-right shrink-0">
           <p
             className={cn(
-              "text-base md:text-lg font-semibold tabular-nums",
+              "font-display text-base md:text-lg font-semibold tabular-nums",
               isProfit ? "text-success" : "text-destructive",
             )}
           >
             {formatINR(pnl)}
           </p>
           {r !== null && (
-            <p className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
+            <p className="text-[11px] text-muted-foreground mt-0.5 tabular-nums font-mono">
               {r >= 0 ? "+" : ""}
               {r.toFixed(2)}R
             </p>

@@ -12,7 +12,7 @@ function Analytics() {
     <>
       <PageHeader
         title="Analytics"
-        description="Performance, behavior, and discipline insights — calmly visualized."
+        description="Performance, behavior, and discipline — evidence over adjectives."
       />
       <SectionErrorBoundary
         title="Analytics temporarily unavailable."
