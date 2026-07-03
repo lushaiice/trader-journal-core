@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  summarizeAnalytics,
-  EMPTY_ANALYTICS_SUMMARY,
-} from "@/lib/analytics/metrics";
+import { summarizeAnalytics, EMPTY_ANALYTICS_SUMMARY } from "@/lib/analytics/metrics";
 import type { NormalizedTrade } from "@/types/analytics";
 
 function trade(partial: Partial<NormalizedTrade>): NormalizedTrade {
@@ -61,10 +58,7 @@ describe("analytics metrics", () => {
   });
 
   it("treats all-wins profit factor as Infinity", () => {
-    const s = summarizeAnalytics([
-      trade({ netPnl: 50 }),
-      trade({ netPnl: 75 }),
-    ]);
+    const s = summarizeAnalytics([trade({ netPnl: 50 }), trade({ netPnl: 75 })]);
     expect(s.profitFactor).toBe(Infinity);
     expect(s.winRate).toBe(1);
     expect(s.largestWin).toBe(75);
@@ -79,6 +73,18 @@ describe("analytics metrics", () => {
     expect(s.openCount).toBe(1);
     expect(s.wins).toBe(1);
     expect(s.totalNetPnl).toBe(100);
+  });
+
+  it("counts partial trades as open", () => {
+    const s = summarizeAnalytics([
+      trade({ status: "partial", filledQty: 5, netPnl: 50 }),
+      trade({ netPnl: 100 }),
+    ]);
+    expect(s.tradeCount).toBe(2);
+    expect(s.closedCount).toBe(1);
+    // partial still carries live exposure → counted as open
+    expect(s.openCount).toBe(1);
+    expect(s.wins).toBe(2);
   });
 
   it("computes deterministic Sharpe-like ratio for stable returns", () => {
