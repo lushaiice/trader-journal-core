@@ -11,8 +11,7 @@ function mean(xs: number[]): number | null {
 function stdev(xs: number[]): number | null {
   if (xs.length < 2) return null;
   const m = mean(xs)!;
-  const variance =
-    xs.reduce((a, b) => a + (b - m) * (b - m), 0) / (xs.length - 1);
+  const variance = xs.reduce((a, b) => a + (b - m) * (b - m), 0) / (xs.length - 1);
   return Math.sqrt(variance);
 }
 
@@ -55,18 +54,13 @@ export function summarizeAnalytics(trades: NormalizedTrade[]): AnalyticsSummary 
   const returns = realized.map((t) => t.netPnl);
   const sd = stdev(returns);
   const meanRet = mean(returns);
-  const sharpeRatio =
-    sd != null && sd > EPS && meanRet != null ? meanRet / sd : null;
+  const sharpeRatio = sd != null && sd > EPS && meanRet != null ? meanRet / sd : null;
 
-  const durations = realized
-    .map((t) => t.holdingDurationMs)
-    .filter((d): d is number => d != null);
+  const durations = realized.map((t) => t.holdingDurationMs).filter((d): d is number => d != null);
   const avgHoldingDurationMs = mean(durations);
 
   const largestWin = wins.length ? Math.max(...wins.map((t) => t.netPnl)) : null;
-  const largestLoss = losses.length
-    ? Math.min(...losses.map((t) => t.netPnl))
-    : null;
+  const largestLoss = losses.length ? Math.min(...losses.map((t) => t.netPnl)) : null;
 
   return {
     tradeCount: trades.length,
