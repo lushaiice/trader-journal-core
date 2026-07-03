@@ -3,8 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import type { Database } from "@/integrations/supabase/types";
 
-export type ConsentRow =
-  Database["public"]["Tables"]["communication_consent"]["Row"];
+export type ConsentRow = Database["public"]["Tables"]["communication_consent"]["Row"];
 
 export interface ConsentInput {
   decision: "accepted" | "declined";

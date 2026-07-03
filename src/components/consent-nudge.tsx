@@ -1,20 +1,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  normalizeIndianMobile,
-  useConsentStatus,
-  useSaveConsentMutation,
-} from "@/lib/consent/api";
+import { normalizeIndianMobile, useConsentStatus, useSaveConsentMutation } from "@/lib/consent/api";
 
 const ONBOARDING_STORAGE_KEY = "trader-os.onboarding.wizard.v1";
 
@@ -85,12 +76,10 @@ export function ConsentNudge() {
     <Dialog open={open} onOpenChange={(o) => !save.isPending && setOpen(o)}>
       <DialogContent className="sm:max-w-md">
         <div className="space-y-2">
-          <DialogTitle className="text-lg font-medium tracking-tight">
-            Stay in the loop
-          </DialogTitle>
+          <DialogTitle className="text-lg font-medium tracking-tight">Stay in the loop</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-            Get product updates, new features, and the occasional newsletter — by
-            email. No spam, no tips, unsubscribe anytime.
+            Get product updates, new features, and the occasional newsletter — by email. No spam, no
+            tips, unsubscribe anytime.
           </DialogDescription>
         </div>
 
@@ -126,19 +115,13 @@ export function ConsentNudge() {
                   if (phoneError) setPhoneError(null);
                 }}
               />
-              {phoneError && (
-                <p className="text-xs text-destructive">{phoneError}</p>
-              )}
+              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
             </div>
           )}
         </div>
 
         <div className="space-y-2 pt-2">
-          <Button
-            className="w-full"
-            onClick={handleAccept}
-            disabled={save.isPending}
-          >
+          <Button className="w-full" onClick={handleAccept} disabled={save.isPending}>
             Yes, keep me posted
           </Button>
           <button
