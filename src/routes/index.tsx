@@ -28,15 +28,13 @@ function Landing() {
 
       <main className="flex-1 flex items-center justify-center px-6">
         <div className="max-w-2xl text-center space-y-6">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
-            For Indian retail traders
-          </span>
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight text-balance">
-            A calm trading journal for disciplined traders.
+          <span className="eyebrow text-muted-foreground">// systems over signals</span>
+          <h1 className="font-display text-4xl md:text-6xl font-semibold tracking-tight text-balance">
+            Trade like it's a business, not a bet.
           </h1>
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto text-balance">
-            Journal trades, track discipline, and understand your psychology — without the noise of
-            calls, signals, or copy-trading.
+            The calm, honest place to run a method, manage real risk, journal every trade —
+            including the losers — and prove the results.
           </p>
           <div className="flex items-center justify-center gap-3 pt-2">
             <Button asChild size="lg">
@@ -49,8 +47,9 @@ function Landing() {
       </main>
 
       <footer className="px-6 py-6 text-center text-xs text-muted-foreground">
-        Traders' OS does not provide buy/sell calls, recommendations, or trading signals.
+        No tips. No calls. No fake screenshots.
       </footer>
+
     </div>
   );
 }
