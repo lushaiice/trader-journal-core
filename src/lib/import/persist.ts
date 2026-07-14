@@ -53,6 +53,11 @@ async function persistImportedTrades(
     const status =
       exitsTotal <= 0 ? "open" : exitsTotal >= t.quantity - 1e-9 ? "closed" : "partial";
 
+    // Estimated Indian retail charges (Zerodha reference). Split across the
+    // three fee columns so downstream calc has meaningful labels — total is
+    // what matters for Net P&L.
+    const ch = computeTradeCharges(t);
+
     const { data: inserted, error: tradeErr } = await supabase
       .from("trades")
       .insert({
@@ -63,9 +68,9 @@ async function persistImportedTrades(
         entry_date: t.entry_date,
         entry_price: t.entry_price,
         quantity: t.quantity,
-        brokerage: 0,
-        taxes: 0,
-        other_fees: 0,
+        brokerage: ch.brokerage,
+        taxes: ch.stt + ch.stamp + ch.sebi + ch.gst,
+        other_fees: ch.transaction,
         tags: [],
         notes: null,
         screenshot_url: null,
