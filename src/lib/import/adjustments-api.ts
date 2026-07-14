@@ -105,19 +105,22 @@ export function useAddHoldingBaseline() {
   return useMutation({
     mutationFn: async (input: AddHoldingBaselineInput) => {
       if (!user) throw new Error("Not signed in");
-      const { error } = await supabase.from("opening_positions").upsert(
-        {
-          user_id: user.id,
-          isin: input.isin,
-          symbol: input.symbol.toUpperCase(),
-          avg_cost: input.avg_cost,
-          quantity: input.quantity,
-          side: "long",
-          acquisition_date: input.as_of_date ?? new Date().toISOString().slice(0, 10),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,isin,symbol" },
-      );
+      const symbolUC = input.symbol.toUpperCase();
+      let del = supabase.from("opening_positions").delete().eq("user_id", user.id);
+      del = input.isin
+        ? del.eq("isin", input.isin)
+        : del.is("isin", null).eq("symbol", symbolUC);
+      const delRes = await del;
+      if (delRes.error) throw delRes.error;
+      const { error } = await supabase.from("opening_positions").insert({
+        user_id: user.id,
+        isin: input.isin,
+        symbol: symbolUC,
+        avg_cost: input.avg_cost,
+        quantity: input.quantity,
+        side: "long",
+        acquisition_date: input.as_of_date ?? new Date().toISOString().slice(0, 10),
+      });
       if (error) throw error;
     },
     onSuccess: () => {
