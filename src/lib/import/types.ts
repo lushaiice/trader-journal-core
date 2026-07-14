@@ -8,6 +8,8 @@ export interface Fill {
   symbol: string;
   segment: string; // used in dedupe key so EQ + FO trade_ids can't collide
   expiry_date: string | null; // null for equity
+  isin: string | null; // null for F&O
+  exchange: string; // NSE / BSE
   trade_date: string;
   trade_type: Side;
   quantity: number;
