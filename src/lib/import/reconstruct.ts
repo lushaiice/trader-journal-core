@@ -84,13 +84,15 @@ function walkPosition(
   const symbol = posOrders[0].symbol;
   const segment = posOrders[0].segment;
   const expiry = posOrders[0].expiry_date;
+  const isin = posOrders[0].isin;
+  const exchange = posOrders[0].exchange;
   const isEquity = !hasExpiryColumn;
 
   let state = emptyState();
 
   const emit = (kind: "closed" | "open"): void => {
     if (state.openedQty <= 1e-9 && state.exits.length === 0) return;
-    trades.push(makeTrade(kind, state, symbol, segment, instrument));
+    trades.push(makeTrade(kind, state, symbol, segment, instrument, isin, exchange));
   };
 
   for (const order of posOrders) {
