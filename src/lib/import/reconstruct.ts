@@ -7,6 +7,17 @@ import type {
   Side,
 } from "./types";
 import { classifyInstrument } from "./symbol";
+import {
+  adjustOrdersForCorporateActions,
+  findBaseline,
+  type CorporateAction,
+  type HoldingBaseline,
+} from "./corporate-actions";
+
+export interface ReconstructOptions {
+  actions?: CorporateAction[];
+  baselines?: HoldingBaseline[];
+}
 
 /** Position key: symbol for EQ, symbol|expiry for FO. */
 function positionKey(o: Order): string {
