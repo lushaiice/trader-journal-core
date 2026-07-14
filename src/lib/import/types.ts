@@ -39,6 +39,8 @@ export interface ReconstructedTrade {
   symbol: string;
   segment: string;
   instrument_type: InstrumentType;
+  isin: string | null;
+  exchange: string;
   side: "long" | "short";
   entry_date: string;
   entry_price: number;
