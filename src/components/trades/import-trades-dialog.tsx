@@ -221,12 +221,17 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <SummaryStat label="Closed" value={String(closedCount)} />
               <SummaryStat label="Open" value={String(openCount)} />
-              <SummaryStat label="Skipped" value={String(orphanCount)} muted />
+              <SummaryStat label="Gross P&L" value={formatINR(totalPnl)} tone={totalPnl >= 0 ? "pos" : "neg"} />
               <SummaryStat
-                label="Gross P&L"
-                value={formatINR(totalPnl)}
-                tone={totalPnl >= 0 ? "pos" : "neg"}
+                label="Net P&L"
+                value={formatINR(netPnl)}
+                tone={netPnl >= 0 ? "pos" : "neg"}
               />
+            </div>
+            <div className="text-xs text-muted-foreground -mt-2">
+              Estimated charges applied: {formatINR(totalCharges)} (brokerage, STT, exchange,
+              SEBI, stamp, GST). Values match Zerodha&rsquo;s calculator within a small tolerance
+              — actual contract-note figures may differ by a rupee or two.
             </div>
 
             {dateRange && (
