@@ -42,6 +42,8 @@ export function groupFillsIntoOrders(fills: Fill[]): Order[] {
       symbol: first.symbol,
       segment: first.segment,
       expiry_date: first.expiry_date,
+      isin: first.isin,
+      exchange: first.exchange,
       side: first.trade_type,
       quantity: totalQty,
       avg_price: notional / totalQty,
