@@ -25,6 +25,8 @@ export interface Order {
   symbol: string;
   segment: string;
   expiry_date: string | null;
+  isin: string | null;
+  exchange: string;
   side: Side;
   quantity: number;
   avg_price: number; // quantity-weighted
