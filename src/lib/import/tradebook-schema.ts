@@ -50,6 +50,8 @@ const side = z
 
 const rowSchema = z.object({
   symbol: z.string().min(1),
+  isin: z.string().optional().nullable(),
+  exchange: z.string().optional().nullable(),
   segment: z.string().min(1),
   trade_date: z.string().min(1),
   trade_type: side,
@@ -110,6 +112,8 @@ export function rowsToFills(parsed: ParsedCsv): {
       symbol: v.symbol.toUpperCase(),
       segment: v.segment.toUpperCase(),
       expiry_date: variant === "fo" ? v.expiry_date || null : null,
+      isin: variant === "equity" ? (v.isin || null) : null,
+      exchange: (v.exchange || "NSE").toUpperCase(),
       trade_date: v.trade_date,
       trade_type: v.trade_type,
       quantity: v.quantity,

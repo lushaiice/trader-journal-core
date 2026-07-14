@@ -30,6 +30,7 @@ import { reconstructFromCsv } from "@/lib/import";
 import type { ReconstructionResult } from "@/lib/import";
 import { useImportTrades } from "@/lib/import/persist";
 import { formatINR } from "@/lib/trades/calculations";
+import { computeBatchCharges } from "@/lib/charges/engine";
 
 interface Props {
   open: boolean;
@@ -110,6 +111,9 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   const orphanCount = preview?.orphans.length ?? 0;
   const skippedCount = preview?.skippedRows.length ?? 0;
   const totalPnl = preview?.trades.reduce((a, t) => a + t.gross_pnl, 0) ?? 0;
+  const chargesBatch = preview ? computeBatchCharges(preview.trades) : null;
+  const totalCharges = chargesBatch?.total ?? 0;
+  const netPnl = totalPnl - totalCharges;
 
   const dateRange = (() => {
     if (!preview || preview.trades.length + preview.orphans.length === 0) return null;
@@ -186,8 +190,9 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
             <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">A few things to know:</p>
               <p>
-                · Zerodha tradebooks contain no charges, so imported P&amp;L is{" "}
-                <span className="text-foreground">gross</span> — before brokerage &amp; taxes.
+                · Charges (brokerage, STT, exchange, SEBI, stamp, GST) are{" "}
+                <span className="text-foreground">estimated</span> from published Zerodha rates —
+                accurate within a rupee or two of the calculator.
               </p>
               <p>
                 · Closing fills whose opening trade is outside the export window are skipped and
@@ -217,12 +222,17 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <SummaryStat label="Closed" value={String(closedCount)} />
               <SummaryStat label="Open" value={String(openCount)} />
-              <SummaryStat label="Skipped" value={String(orphanCount)} muted />
+              <SummaryStat label="Gross P&L" value={formatINR(totalPnl)} tone={totalPnl >= 0 ? "pos" : "neg"} />
               <SummaryStat
-                label="Gross P&L"
-                value={formatINR(totalPnl)}
-                tone={totalPnl >= 0 ? "pos" : "neg"}
+                label="Net P&L"
+                value={formatINR(netPnl)}
+                tone={netPnl >= 0 ? "pos" : "neg"}
               />
+            </div>
+            <div className="text-xs text-muted-foreground -mt-2">
+              Estimated charges applied: {formatINR(totalCharges)} (brokerage, STT, exchange,
+              SEBI, stamp, GST). Values match Zerodha&rsquo;s calculator within a small tolerance
+              — actual contract-note figures may differ by a rupee or two.
             </div>
 
             {dateRange && (

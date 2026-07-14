@@ -8,6 +8,8 @@ function o(overrides: Partial<Order>): Order {
     symbol: "INFY",
     segment: "EQ",
     expiry_date: null,
+    isin: null,
+    exchange: "NSE",
     side: "buy",
     quantity: 10,
     avg_price: 100,

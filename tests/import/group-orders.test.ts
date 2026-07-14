@@ -7,6 +7,8 @@ function f(overrides: Partial<Fill>): Fill {
     symbol: "INFY",
     segment: "EQ",
     expiry_date: null,
+    isin: null,
+    exchange: "NSE",
     trade_date: "2025-01-02",
     trade_type: "buy",
     quantity: 1,

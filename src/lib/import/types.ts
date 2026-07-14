@@ -8,6 +8,8 @@ export interface Fill {
   symbol: string;
   segment: string; // used in dedupe key so EQ + FO trade_ids can't collide
   expiry_date: string | null; // null for equity
+  isin: string | null; // null for F&O
+  exchange: string; // NSE / BSE
   trade_date: string;
   trade_type: Side;
   quantity: number;
@@ -23,6 +25,8 @@ export interface Order {
   symbol: string;
   segment: string;
   expiry_date: string | null;
+  isin: string | null;
+  exchange: string;
   side: Side;
   quantity: number;
   avg_price: number; // quantity-weighted
@@ -35,6 +39,8 @@ export interface ReconstructedTrade {
   symbol: string;
   segment: string;
   instrument_type: InstrumentType;
+  isin: string | null;
+  exchange: string;
   side: "long" | "short";
   entry_date: string;
   entry_price: number;
