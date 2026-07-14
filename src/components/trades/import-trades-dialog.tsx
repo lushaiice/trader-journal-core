@@ -341,23 +341,30 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="text-xs text-muted-foreground mb-2">
-                      These closing fills have no matching opening trade in this file. Usually the
-                      position was opened before your export window — re-exporting with an earlier
-                      start date will capture it. It can also happen with bonus, split, or demerger
-                      shares, which have no buy fill to match. These rows were skipped; log them
-                      manually if you want them tracked.
+                      These closing fills have no matching opening trade in this file. Resolve
+                      each one below — as a corporate action (split, bonus, consolidation) or an
+                      existing holding bought before your export window. Resolutions are
+                      remembered for future imports.
                     </p>
                     <div className="space-y-1.5">
                       {preview.orphans.slice(0, 50).map((o, i) => (
                         <div
                           key={i}
-                          className="flex justify-between text-xs bg-muted/40 rounded px-2 py-1.5"
+                          className="flex items-center justify-between gap-2 text-xs bg-muted/40 rounded px-2 py-1.5"
                         >
                           <span className="font-medium">{o.symbol}</span>
-                          <span className="text-muted-foreground">
+                          <span className="text-muted-foreground flex-1 text-right">
                             {o.side} {o.quantity} @ {o.price.toFixed(2)} ·{" "}
                             {fmtDate(o.execution_time)}
                           </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() => setResolving(o)}
+                          >
+                            Resolve
+                          </Button>
                         </div>
                       ))}
                     </div>
