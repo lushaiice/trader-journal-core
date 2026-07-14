@@ -47,30 +47,6 @@ function sumTotal(c: TradeCharges): TradeCharges {
   return c;
 }
 
-/** Notional value of the entry leg (positive rupees). */
-function buyValue(t: ReconstructedTrade): number {
-  return t.side === "long" ? t.entry_price * t.quantity : exitValue(t);
-}
-
-/** Notional value of the exit leg (across all partial exits). */
-function exitValue(t: ReconstructedTrade): number {
-  if (t.side === "long") {
-    return t.exits.reduce((a, e) => a + e.exit_price * e.quantity, 0);
-  }
-  // Short: exit is a buy-back.
-  return t.exits.reduce((a, e) => a + e.exit_price * e.quantity, 0);
-}
-
-function sellValue(t: ReconstructedTrade): number {
-  // For long: sells are exits. For short: sells are the opening leg.
-  if (t.side === "long") return exitValueLong(t);
-  return t.entry_price * Math.min(t.quantity, exitQty(t));
-}
-
-function exitValueLong(t: ReconstructedTrade): number {
-  return t.exits.reduce((a, e) => a + e.exit_price * e.quantity, 0);
-}
-
 function exitQty(t: ReconstructedTrade): number {
   return t.exits.reduce((a, e) => a + e.quantity, 0);
 }
@@ -84,7 +60,7 @@ function buyValueLegAware(t: ReconstructedTrade): number {
 
 function sellValueLegAware(t: ReconstructedTrade): number {
   // Rupees exchanged on the SELL side of the trade (open or exit).
-  if (t.side === "long") return exitValueLong(t);
+  if (t.side === "long") return t.exits.reduce((a, e) => a + e.exit_price * e.quantity, 0);
   return t.entry_price * exitQty(t);
 }
 
