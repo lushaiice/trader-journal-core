@@ -190,8 +190,9 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
             <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">A few things to know:</p>
               <p>
-                · Zerodha tradebooks contain no charges, so imported P&amp;L is{" "}
-                <span className="text-foreground">gross</span> — before brokerage &amp; taxes.
+                · Charges (brokerage, STT, exchange, SEBI, stamp, GST) are{" "}
+                <span className="text-foreground">estimated</span> from published Zerodha rates —
+                accurate within a rupee or two of the calculator.
               </p>
               <p>
                 · Closing fills whose opening trade is outside the export window are skipped and
