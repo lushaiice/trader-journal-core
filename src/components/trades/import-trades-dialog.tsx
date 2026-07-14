@@ -60,7 +60,6 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   const actionsQ = useCorporateActions();
   const baselinesQ = useHoldingBaselines();
 
-
   const reset = () => {
     setStage("upload");
     setPreview(null);
@@ -110,7 +109,6 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
       setPreview(result);
     }
   };
-
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -252,7 +250,11 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <SummaryStat label="Closed" value={String(closedCount)} />
               <SummaryStat label="Open" value={String(openCount)} />
-              <SummaryStat label="Gross P&L" value={formatINR(totalPnl)} tone={totalPnl >= 0 ? "pos" : "neg"} />
+              <SummaryStat
+                label="Gross P&L"
+                value={formatINR(totalPnl)}
+                tone={totalPnl >= 0 ? "pos" : "neg"}
+              />
               <SummaryStat
                 label="Net P&L"
                 value={formatINR(netPnl)}
@@ -260,9 +262,9 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
               />
             </div>
             <div className="text-xs text-muted-foreground -mt-2">
-              Estimated charges applied: {formatINR(totalCharges)} (brokerage, STT, exchange,
-              SEBI, stamp, GST). Values match Zerodha&rsquo;s calculator within a small tolerance
-              — actual contract-note figures may differ by a rupee or two.
+              Estimated charges applied: {formatINR(totalCharges)} (brokerage, STT, exchange, SEBI,
+              stamp, GST). Values match Zerodha&rsquo;s calculator within a small tolerance — actual
+              contract-note figures may differ by a rupee or two.
             </div>
 
             {dateRange && (
@@ -341,10 +343,10 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="text-xs text-muted-foreground mb-2">
-                      These closing fills have no matching opening trade in this file. Resolve
-                      each one below — as a corporate action (split, bonus, consolidation) or an
-                      existing holding bought before your export window. Resolutions are
-                      remembered for future imports.
+                      These closing fills have no matching opening trade in this file. Resolve each
+                      one below — as a corporate action (split, bonus, consolidation) or an existing
+                      holding bought before your export window. Resolutions are remembered for
+                      future imports.
                     </p>
                     <div className="space-y-1.5">
                       {preview.orphans.slice(0, 50).map((o, i) => (

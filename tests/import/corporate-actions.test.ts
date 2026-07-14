@@ -40,9 +40,7 @@ describe("computeRatioFactor", () => {
 
 describe("adjustOrdersForCorporateActions", () => {
   it("multiplies pre-ex-date orders by the ratio and divides price", () => {
-    const orders = [
-      o({ execution_time: "2024-01-01T09:00:00", quantity: 100, avg_price: 1000 }),
-    ];
+    const orders = [o({ execution_time: "2024-01-01T09:00:00", quantity: 100, avg_price: 1000 })];
     const actions: CorporateAction[] = [
       {
         isin: "INE001",
@@ -58,9 +56,7 @@ describe("adjustOrdersForCorporateActions", () => {
   });
 
   it("leaves post-ex-date orders untouched", () => {
-    const orders = [
-      o({ execution_time: "2024-06-01T09:00:00", quantity: 500, avg_price: 200 }),
-    ];
+    const orders = [o({ execution_time: "2024-06-01T09:00:00", quantity: 500, avg_price: 200 })];
     const actions: CorporateAction[] = [
       { isin: "INE001", symbol: "TATA", action_type: "split", ex_date: "2024-03-01", ratio: 5 },
     ];

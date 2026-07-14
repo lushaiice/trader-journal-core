@@ -114,8 +114,8 @@ export function ResolveOrphanDialog({ orphan, open, onOpenChange, onResolved }: 
         <DialogHeader>
           <DialogTitle>Resolve {orphan.symbol}</DialogTitle>
           <DialogDescription>
-            Sell of {orphan.quantity} @ {orphan.price.toFixed(2)} has no matching buy in this
-            file. Tell us why so future imports get it right.
+            Sell of {orphan.quantity} @ {orphan.price.toFixed(2)} has no matching buy in this file.
+            Tell us why so future imports get it right.
           </DialogDescription>
         </DialogHeader>
 
@@ -170,11 +170,7 @@ export function ResolveOrphanDialog({ orphan, open, onOpenChange, onResolved }: 
             </div>
             <div className="grid gap-2">
               <Label>Acquisition date (optional)</Label>
-              <Input
-                type="date"
-                value={asOfDate}
-                onChange={(e) => setAsOfDate(e.target.value)}
-              />
+              <Input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} />
             </div>
             <p className="text-xs text-muted-foreground">
               This tells us the position was bought before your export window. Saved for future

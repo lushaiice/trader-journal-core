@@ -69,9 +69,7 @@ export function useAddCorporateAction() {
         .delete()
         .eq("user_id", user.id)
         .eq("ex_date", input.ex_date);
-      del = input.isin
-        ? del.eq("isin", input.isin)
-        : del.is("isin", null).eq("symbol", symbolUC);
+      del = input.isin ? del.eq("isin", input.isin) : del.is("isin", null).eq("symbol", symbolUC);
       const delRes = await del;
       if (delRes.error) throw delRes.error;
       const { error } = await supabase.from("corporate_actions").insert({
@@ -107,9 +105,7 @@ export function useAddHoldingBaseline() {
       if (!user) throw new Error("Not signed in");
       const symbolUC = input.symbol.toUpperCase();
       let del = supabase.from("opening_positions").delete().eq("user_id", user.id);
-      del = input.isin
-        ? del.eq("isin", input.isin)
-        : del.is("isin", null).eq("symbol", symbolUC);
+      del = input.isin ? del.eq("isin", input.isin) : del.is("isin", null).eq("symbol", symbolUC);
       const delRes = await del;
       if (delRes.error) throw delRes.error;
       const { error } = await supabase.from("opening_positions").insert({
