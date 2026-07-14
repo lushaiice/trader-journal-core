@@ -435,6 +435,16 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
           )}
         </DialogFooter>
       </DialogContent>
+      {resolving && (
+        <ResolveOrphanDialog
+          orphan={resolving}
+          open={!!resolving}
+          onOpenChange={(v) => {
+            if (!v) setResolving(null);
+          }}
+          onResolved={onResolutionSaved}
+        />
+      )}
     </Dialog>
   );
 }
