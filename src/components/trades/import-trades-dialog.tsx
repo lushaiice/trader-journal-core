@@ -30,6 +30,7 @@ import { reconstructFromCsv } from "@/lib/import";
 import type { ReconstructionResult } from "@/lib/import";
 import { useImportTrades } from "@/lib/import/persist";
 import { formatINR } from "@/lib/trades/calculations";
+import { computeBatchCharges } from "@/lib/charges/engine";
 
 interface Props {
   open: boolean;
