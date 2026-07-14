@@ -64,10 +64,20 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   const reset = () => {
     setStage("upload");
     setPreview(null);
+    setRawText(null);
     setError(null);
     setDrag(false);
     setParsing(false);
+    setResolving(null);
     importMut.reset();
+  };
+
+  const runReconstruct = (text: string) => {
+    const result = reconstructFromCsv(text, {
+      actions: actionsQ.data ?? [],
+      baselines: baselinesQ.data ?? [],
+    });
+    setPreview(result);
   };
 
   const handleFile = async (file: File) => {
@@ -79,8 +89,8 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
     setParsing(true);
     try {
       const text = await file.text();
-      const result = reconstructFromCsv(text);
-      setPreview(result);
+      setRawText(text);
+      runReconstruct(text);
       setStage("preview");
     } catch (err) {
       setError((err as Error).message);
@@ -88,6 +98,19 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
       setParsing(false);
     }
   };
+
+  const onResolutionSaved = async () => {
+    // Refetch adjustments then re-run reconstruction on the same file.
+    const [a, b] = await Promise.all([actionsQ.refetch(), baselinesQ.refetch()]);
+    if (rawText) {
+      const result = reconstructFromCsv(rawText, {
+        actions: a.data ?? [],
+        baselines: b.data ?? [],
+      });
+      setPreview(result);
+    }
+  };
+
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
