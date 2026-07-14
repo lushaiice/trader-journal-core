@@ -61,19 +61,28 @@ export function useAddCorporateAction() {
   return useMutation({
     mutationFn: async (input: AddCorporateActionInput) => {
       if (!user) throw new Error("Not signed in");
-      const { error } = await supabase.from("corporate_actions").upsert(
-        {
-          user_id: user.id,
-          isin: input.isin,
-          symbol: input.symbol.toUpperCase(),
-          action_type: input.action_type,
-          ex_date: input.ex_date,
-          ratio_from: input.ratio_from,
-          ratio_to: input.ratio_to,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,isin,symbol,ex_date" },
-      );
+      // Manual upsert: unique key is functional (coalesce(isin, symbol)) so
+      // postgrest onConflict can't target it. Delete any matching row first.
+      const symbolUC = input.symbol.toUpperCase();
+      let del = supabase
+        .from("corporate_actions")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("ex_date", input.ex_date);
+      del = input.isin
+        ? del.eq("isin", input.isin)
+        : del.is("isin", null).eq("symbol", symbolUC);
+      const delRes = await del;
+      if (delRes.error) throw delRes.error;
+      const { error } = await supabase.from("corporate_actions").insert({
+        user_id: user.id,
+        isin: input.isin,
+        symbol: symbolUC,
+        action_type: input.action_type,
+        ex_date: input.ex_date,
+        ratio_from: input.ratio_from,
+        ratio_to: input.ratio_to,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
