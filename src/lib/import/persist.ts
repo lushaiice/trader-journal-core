@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import type { ReconstructedTrade } from "./index";
+import { computeTradeCharges } from "@/lib/charges/engine";
 
 // Must match the trades.source CHECK constraint: 'manual' | 'csv_import' | 'kite'.
 // 'kite' is reserved for the future live Kite Connect integration.
