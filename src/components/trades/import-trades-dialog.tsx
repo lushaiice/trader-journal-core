@@ -111,6 +111,9 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   const orphanCount = preview?.orphans.length ?? 0;
   const skippedCount = preview?.skippedRows.length ?? 0;
   const totalPnl = preview?.trades.reduce((a, t) => a + t.gross_pnl, 0) ?? 0;
+  const chargesBatch = preview ? computeBatchCharges(preview.trades) : null;
+  const totalCharges = chargesBatch?.total ?? 0;
+  const netPnl = totalPnl - totalCharges;
 
   const dateRange = (() => {
     if (!preview || preview.trades.length + preview.orphans.length === 0) return null;
