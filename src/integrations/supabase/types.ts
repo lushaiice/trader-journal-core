@@ -151,6 +151,7 @@ export type Database = {
           created_at: string
           ex_date: string
           id: string
+          isin: string | null
           notes: string | null
           ratio_from: number
           ratio_to: number
@@ -163,6 +164,7 @@ export type Database = {
           created_at?: string
           ex_date: string
           id?: string
+          isin?: string | null
           notes?: string | null
           ratio_from: number
           ratio_to: number
@@ -175,6 +177,7 @@ export type Database = {
           created_at?: string
           ex_date?: string
           id?: string
+          isin?: string | null
           notes?: string | null
           ratio_from?: number
           ratio_to?: number
@@ -377,6 +380,7 @@ export type Database = {
           avg_cost: number
           created_at: string
           id: string
+          isin: string | null
           notes: string | null
           quantity: number
           side: string
@@ -389,6 +393,7 @@ export type Database = {
           avg_cost: number
           created_at?: string
           id?: string
+          isin?: string | null
           notes?: string | null
           quantity: number
           side: string
@@ -401,6 +406,7 @@ export type Database = {
           avg_cost?: number
           created_at?: string
           id?: string
+          isin?: string | null
           notes?: string | null
           quantity?: number
           side?: string

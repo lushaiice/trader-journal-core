@@ -27,10 +27,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { reconstructFromCsv } from "@/lib/import";
-import type { ReconstructionResult } from "@/lib/import";
+import type { ReconstructionResult, Orphan } from "@/lib/import";
 import { useImportTrades } from "@/lib/import/persist";
 import { formatINR } from "@/lib/trades/calculations";
 import { computeBatchCharges } from "@/lib/charges/engine";
+import { useCorporateActions, useHoldingBaselines } from "@/lib/import/adjustments-api";
+import { ResolveOrphanDialog } from "./resolve-orphan-dialog";
 
 interface Props {
   open: boolean;
@@ -51,16 +53,30 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [rawText, setRawText] = useState<string | null>(null);
+  const [resolving, setResolving] = useState<Orphan | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const importMut = useImportTrades();
+  const actionsQ = useCorporateActions();
+  const baselinesQ = useHoldingBaselines();
 
   const reset = () => {
     setStage("upload");
     setPreview(null);
+    setRawText(null);
     setError(null);
     setDrag(false);
     setParsing(false);
+    setResolving(null);
     importMut.reset();
+  };
+
+  const runReconstruct = (text: string) => {
+    const result = reconstructFromCsv(text, {
+      actions: actionsQ.data ?? [],
+      baselines: baselinesQ.data ?? [],
+    });
+    setPreview(result);
   };
 
   const handleFile = async (file: File) => {
@@ -72,13 +88,25 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
     setParsing(true);
     try {
       const text = await file.text();
-      const result = reconstructFromCsv(text);
-      setPreview(result);
+      setRawText(text);
+      runReconstruct(text);
       setStage("preview");
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setParsing(false);
+    }
+  };
+
+  const onResolutionSaved = async () => {
+    // Refetch adjustments then re-run reconstruction on the same file.
+    const [a, b] = await Promise.all([actionsQ.refetch(), baselinesQ.refetch()]);
+    if (rawText) {
+      const result = reconstructFromCsv(rawText, {
+        actions: a.data ?? [],
+        baselines: b.data ?? [],
+      });
+      setPreview(result);
     }
   };
 
@@ -222,7 +250,11 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <SummaryStat label="Closed" value={String(closedCount)} />
               <SummaryStat label="Open" value={String(openCount)} />
-              <SummaryStat label="Gross P&L" value={formatINR(totalPnl)} tone={totalPnl >= 0 ? "pos" : "neg"} />
+              <SummaryStat
+                label="Gross P&L"
+                value={formatINR(totalPnl)}
+                tone={totalPnl >= 0 ? "pos" : "neg"}
+              />
               <SummaryStat
                 label="Net P&L"
                 value={formatINR(netPnl)}
@@ -230,9 +262,9 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
               />
             </div>
             <div className="text-xs text-muted-foreground -mt-2">
-              Estimated charges applied: {formatINR(totalCharges)} (brokerage, STT, exchange,
-              SEBI, stamp, GST). Values match Zerodha&rsquo;s calculator within a small tolerance
-              — actual contract-note figures may differ by a rupee or two.
+              Estimated charges applied: {formatINR(totalCharges)} (brokerage, STT, exchange, SEBI,
+              stamp, GST). Values match Zerodha&rsquo;s calculator within a small tolerance — actual
+              contract-note figures may differ by a rupee or two.
             </div>
 
             {dateRange && (
@@ -311,23 +343,30 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="text-xs text-muted-foreground mb-2">
-                      These closing fills have no matching opening trade in this file. Usually the
-                      position was opened before your export window — re-exporting with an earlier
-                      start date will capture it. It can also happen with bonus, split, or demerger
-                      shares, which have no buy fill to match. These rows were skipped; log them
-                      manually if you want them tracked.
+                      These closing fills have no matching opening trade in this file. Resolve each
+                      one below — as a corporate action (split, bonus, consolidation) or an existing
+                      holding bought before your export window. Resolutions are remembered for
+                      future imports.
                     </p>
                     <div className="space-y-1.5">
                       {preview.orphans.slice(0, 50).map((o, i) => (
                         <div
                           key={i}
-                          className="flex justify-between text-xs bg-muted/40 rounded px-2 py-1.5"
+                          className="flex items-center justify-between gap-2 text-xs bg-muted/40 rounded px-2 py-1.5"
                         >
                           <span className="font-medium">{o.symbol}</span>
-                          <span className="text-muted-foreground">
+                          <span className="text-muted-foreground flex-1 text-right">
                             {o.side} {o.quantity} @ {o.price.toFixed(2)} ·{" "}
                             {fmtDate(o.execution_time)}
                           </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() => setResolving(o)}
+                          >
+                            Resolve
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -398,6 +437,16 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
           )}
         </DialogFooter>
       </DialogContent>
+      {resolving && (
+        <ResolveOrphanDialog
+          orphan={resolving}
+          open={!!resolving}
+          onOpenChange={(v) => {
+            if (!v) setResolving(null);
+          }}
+          onResolved={onResolutionSaved}
+        />
+      )}
     </Dialog>
   );
 }

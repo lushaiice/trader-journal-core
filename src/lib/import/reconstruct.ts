@@ -7,6 +7,17 @@ import type {
   Side,
 } from "./types";
 import { classifyInstrument } from "./symbol";
+import {
+  adjustOrdersForCorporateActions,
+  findBaseline,
+  type CorporateAction,
+  type HoldingBaseline,
+} from "./corporate-actions";
+
+export interface ReconstructOptions {
+  actions?: CorporateAction[];
+  baselines?: HoldingBaseline[];
+}
 
 /** Position key: symbol for EQ, symbol|expiry for FO. */
 function positionKey(o: Order): string {
@@ -32,9 +43,14 @@ function positionKey(o: Order): string {
 export function reconstructPositions(
   orders: Order[],
   hasExpiryColumn: boolean,
+  options: ReconstructOptions = {},
 ): ReconstructionResult {
+  const actions = options.actions ?? [];
+  const baselines = options.baselines ?? [];
+  const adjusted = actions.length > 0 ? adjustOrdersForCorporateActions(orders, actions) : orders;
+
   const byPos = new Map<string, Order[]>();
-  for (const o of orders) {
+  for (const o of adjusted) {
     const key = positionKey(o);
     const list = byPos.get(key) ?? [];
     list.push(o);
@@ -49,7 +65,55 @@ export function reconstructPositions(
     walkPosition(posOrders, hasExpiryColumn, trades, orphans);
   }
 
+  if (baselines.length > 0 && orphans.length > 0) {
+    resolveOrphansWithBaselines(orphans, trades, baselines);
+  }
+
   return { trades, orphans };
+}
+
+/**
+ * For every orphan (unmatched closing sell) whose isin/symbol has a stored
+ * baseline, convert it into a closed long trade at the baseline avg_cost.
+ * Removes the orphan from the list.
+ */
+function resolveOrphansWithBaselines(
+  orphans: Orphan[],
+  trades: ReconstructedTrade[],
+  baselines: HoldingBaseline[],
+): void {
+  for (let i = orphans.length - 1; i >= 0; i--) {
+    const o = orphans[i];
+    if (o.side !== "sell") continue;
+    const isin: string | null = null;
+    const baseline = findBaseline(isin, o.symbol, baselines);
+    if (!baseline) continue;
+
+    const entryDate = baseline.as_of_date ?? o.execution_time.slice(0, 10);
+    const instrument: InstrumentType = o.expiry_date ? "futures" : "equity";
+    trades.push({
+      kind: "closed",
+      symbol: o.symbol,
+      segment: o.segment,
+      instrument_type: instrument,
+      isin: null,
+      exchange: "NSE",
+      side: "long",
+      entry_date: entryDate,
+      entry_price: baseline.avg_cost,
+      quantity: o.quantity,
+      exits: [
+        {
+          exit_price: o.price,
+          quantity: o.quantity,
+          exit_date: o.execution_time,
+        },
+      ],
+      gross_pnl: (o.price - baseline.avg_cost) * o.quantity,
+      source_fill_ids: [...o.source_fill_ids],
+    });
+    orphans.splice(i, 1);
+  }
 }
 
 interface TradeState {

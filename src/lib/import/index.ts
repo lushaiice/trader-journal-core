@@ -14,9 +14,16 @@ import { reconstructPositions } from "./reconstruct";
 import type { ReconstructionResult } from "./types";
 
 import type { SkippedRow } from "./tradebook-schema";
+import type { ReconstructOptions } from "./reconstruct";
+export type { ReconstructOptions } from "./reconstruct";
+export type { CorporateAction, HoldingBaseline } from "./corporate-actions";
+export { adjustOrdersForCorporateActions, computeRatioFactor } from "./corporate-actions";
 
 /** Full pipeline: CSV text → reconstructed trades + orphans. */
-export function reconstructFromCsv(text: string): ReconstructionResult & {
+export function reconstructFromCsv(
+  text: string,
+  options: ReconstructOptions = {},
+): ReconstructionResult & {
   variant: "equity" | "fo";
   fillCount: number;
   skippedRows: SkippedRow[];
@@ -24,6 +31,6 @@ export function reconstructFromCsv(text: string): ReconstructionResult & {
   const parsed = parseCsv(text);
   const { variant, fills, skippedRows } = rowsToFills(parsed);
   const orders = groupFillsIntoOrders(fills);
-  const result = reconstructPositions(orders, variant === "fo");
+  const result = reconstructPositions(orders, variant === "fo", options);
   return { ...result, variant, fillCount: fills.length, skippedRows };
 }
