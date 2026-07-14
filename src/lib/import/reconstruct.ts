@@ -183,6 +183,8 @@ function makeTrade(
   symbol: string,
   segment: string,
   instrument: InstrumentType,
+  isin: string | null,
+  exchange: string,
 ): ReconstructedTrade {
   const side: "long" | "short" = state.entrySide === "buy" ? "long" : "short";
   const sign = side === "long" ? 1 : -1;
@@ -196,6 +198,8 @@ function makeTrade(
     symbol,
     segment,
     instrument_type: instrument,
+    isin,
+    exchange,
     side,
     entry_date: state.entryDate,
     entry_price: state.avgCost,
