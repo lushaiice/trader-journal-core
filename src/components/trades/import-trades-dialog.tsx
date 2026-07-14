@@ -27,10 +27,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { reconstructFromCsv } from "@/lib/import";
-import type { ReconstructionResult } from "@/lib/import";
+import type { ReconstructionResult, Orphan } from "@/lib/import";
 import { useImportTrades } from "@/lib/import/persist";
 import { formatINR } from "@/lib/trades/calculations";
 import { computeBatchCharges } from "@/lib/charges/engine";
+import { useCorporateActions, useHoldingBaselines } from "@/lib/import/adjustments-api";
+import { ResolveOrphanDialog } from "./resolve-orphan-dialog";
 
 interface Props {
   open: boolean;
@@ -51,8 +53,13 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [rawText, setRawText] = useState<string | null>(null);
+  const [resolving, setResolving] = useState<Orphan | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const importMut = useImportTrades();
+  const actionsQ = useCorporateActions();
+  const baselinesQ = useHoldingBaselines();
+
 
   const reset = () => {
     setStage("upload");
