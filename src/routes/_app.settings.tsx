@@ -229,3 +229,55 @@ function AppearanceSection() {
     </section>
   );
 }
+
+function RiskFreeRateSection() {
+  const settings = useUserSettings();
+  const update = useUpdateUserSettings();
+  const current = settings.data?.risk_free_rate ?? DEFAULT_USER_SETTINGS.risk_free_rate;
+  const [value, setValue] = useState<string>(String(current));
+
+  useEffect(() => {
+    setValue(String(current));
+  }, [current]);
+
+  const parsed = Number(value);
+  const valid = Number.isFinite(parsed) && parsed >= 0 && parsed <= 25;
+  const dirty = valid && Math.abs(parsed - current) > 1e-9;
+
+  const onSave = async () => {
+    if (!valid) return;
+    try {
+      await update.mutateAsync({ risk_free_rate: parsed });
+      toast.success("Risk-free rate saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save");
+    }
+  };
+
+  return (
+    <section className="surface-card p-6 space-y-4">
+      <div>
+        <h3 className="text-sm font-medium mb-1">Risk-free rate</h3>
+        <p className="text-xs text-muted-foreground">
+          Used to compute Sharpe and Sortino on the Portfolio page. Default 6.5% (India 10Y G-Sec).
+        </p>
+      </div>
+      <div className="flex items-end gap-3">
+        <div className="flex-1 max-w-[180px] space-y-1">
+          <Label className="text-xs text-muted-foreground">Rate (%)</Label>
+          <Input
+            type="number"
+            step={0.1}
+            min={0}
+            max={25}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+        </div>
+        <Button size="sm" onClick={onSave} disabled={!dirty || update.isPending}>
+          {update.isPending ? "Saving…" : "Save"}
+        </Button>
+      </div>
+    </section>
+  );
+}
