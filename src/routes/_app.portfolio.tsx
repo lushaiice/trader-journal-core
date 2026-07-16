@@ -243,6 +243,8 @@ function PortfolioPage() {
           />
 
           <BenchmarkSection trades={normalized} capitalBase={capital.baseCapital} />
+
+          <RebalanceSection holdings={result.holdings} />
         </>
       )}
     </>
