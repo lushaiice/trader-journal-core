@@ -53,7 +53,7 @@ async function syncSymbols(
   for (const { symbol, isin } of symbols) {
     const ticker = symbolToYahooTicker(symbol);
     try {
-      const series = await provider.getDailyCloses([ticker], "5d");
+      const series = await provider.getDailyCloses([ticker], "2y");
       const points = series[ticker] ?? [];
       if (!points.length) continue;
       const rows = points.map((p) => ({
