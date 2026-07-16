@@ -457,12 +457,23 @@ function AllocationSection({
   allocation,
   weights,
   capitalBase,
+  topWeight,
+  topSymbol,
+  herfindahl,
 }: {
   allocation: ReturnType<typeof computeAllocation>;
   weights: { symbol: string; weight: number }[];
   capitalBase: number;
+  topWeight: number | null;
+  topSymbol: string | null;
+  herfindahl: number | null;
 }) {
   const hasDeployed = allocation.deployedValue > 0;
+  const concLabel =
+    topWeight == null
+      ? "—"
+      : `${(topWeight * 100).toFixed(1)}%${topSymbol ? ` · ${topSymbol}` : ""}`;
+  const concHint = herfindahl == null ? "No priced holdings" : `HHI ${herfindahl.toFixed(2)}`;
   return (
     <section className="mb-8">
       <h2 className="eyebrow mb-3">Allocation &amp; exposure</h2>
@@ -501,8 +512,16 @@ function AllocationSection({
               Set an initial capital event to see exposure.
             </p>
           )}
+          <div className="mt-3 pt-3 border-t border-border">
+            <span className="eyebrow text-muted-foreground">Concentration</span>
+            <p className="font-display text-lg font-semibold tabular-nums tracking-tight mt-1">
+              {concLabel}
+            </p>
+            <p className="text-[11px] text-muted-foreground">{concHint}</p>
+          </div>
         </div>
       </div>
+
 
       {weights.length > 0 && (
         <div className="surface-card p-4 md:p-5 mt-4">
