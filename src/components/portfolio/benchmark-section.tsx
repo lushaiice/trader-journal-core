@@ -16,25 +16,23 @@ import { buildBenchmarkComparison, type PnlPoint } from "@/lib/portfolio/benchma
 import type { NormalizedTrade } from "@/types/analytics";
 import { cn } from "@/lib/utils";
 
-type RangeKey = "1M" | "3M" | "1Y" | "ALL";
+type RangeKey = "1M" | "3M" | "1Y" | "INCEPTION" | "ALL" | "CUSTOM";
 
-const RANGES: { key: RangeKey; label: string }[] = [
-  { key: "1M", label: "1M" },
-  { key: "3M", label: "3M" },
-  { key: "1Y", label: "1Y" },
-  { key: "ALL", label: "All" },
-];
+interface RangeDef {
+  key: RangeKey;
+  label: string;
+}
 
 function toIsoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function windowStart(range: RangeKey): string | null {
-  if (range === "ALL") return null;
+function relativeStart(range: RangeKey): string | null {
   const d = new Date();
   if (range === "1M") d.setMonth(d.getMonth() - 1);
   else if (range === "3M") d.setMonth(d.getMonth() - 3);
   else if (range === "1Y") d.setFullYear(d.getFullYear() - 1);
+  else return null;
   return toIsoDate(d);
 }
 
