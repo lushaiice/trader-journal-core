@@ -65,7 +65,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
     assetFilter: asset,
     sideFilter: side,
   });
-  const [activeId] = useState<string | null>(null);
+  
 
   const { summary, equityCurve, drawdownSeries, drawdown, emotional, discipline, tags, filteredTrades } =
     analytics;
