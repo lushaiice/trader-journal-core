@@ -11,11 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { format } from "date-fns";
-import {
-  BENCHMARK_INDICES,
-  useIndexSeries,
-  useSymbolPriceHistory,
-} from "@/lib/market/api";
+import { BENCHMARK_INDICES, useIndexSeries, useSymbolPriceHistory } from "@/lib/market/api";
 import { buildDailyTotalPnl } from "@/lib/portfolio/mtm-curve";
 import {
   buildEquitySeries,
@@ -73,10 +69,7 @@ export function RiskCharts({ trades, capitalBase, inceptionDate }: Props) {
   }, [trades, historyQuery.data, inceptionDate, capitalBase]);
 
   const portReturns = useMemo(() => dailyReturns(equity), [equity]);
-  const benchReturns = useMemo(
-    () => indexDailyReturns(indexQuery.data ?? []),
-    [indexQuery.data],
-  );
+  const benchReturns = useMemo(() => indexDailyReturns(indexQuery.data ?? []), [indexQuery.data]);
 
   const rolling = useMemo(
     () => computeRollingRisk(portReturns, benchReturns, rf, MIN_OBS),

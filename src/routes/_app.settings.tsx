@@ -58,7 +58,6 @@ function SettingsPage() {
 
         <RiskFreeRateSection />
 
-
         <section className="surface-card p-6 space-y-5">
           <div>
             <h3 className="text-sm font-medium mb-1">Workspace preferences</h3>
@@ -101,9 +100,7 @@ function SettingsPage() {
             <Label className="text-xs text-muted-foreground">Preferred daily flow</Label>
             <Select
               value={prefs.preferredFlow}
-              onValueChange={(v) =>
-                update({ preferredFlow: v as typeof prefs.preferredFlow })
-              }
+              onValueChange={(v) => update({ preferredFlow: v as typeof prefs.preferredFlow })}
             >
               <SelectTrigger className="h-9">
                 <SelectValue />
@@ -180,9 +177,7 @@ function PrefRow({
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
         <p className="text-sm">{label}</p>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
       </div>
       {children}
     </div>

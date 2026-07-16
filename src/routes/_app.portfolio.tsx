@@ -101,7 +101,6 @@ function PortfolioPage() {
     return earliest;
   }, [capital.events]);
 
-  
   const concentration = useMemo(() => computeConcentration(result.holdings), [result.holdings]);
   const allocation = useMemo(
     () => computeAllocation(openTrades, priceBySymbol, capital.baseCapital),
@@ -413,7 +412,6 @@ function Td({
   );
 }
 
-
 // ─────────────────────── Allocation section ─────────────────────────
 
 function ShareBar({
@@ -521,7 +519,6 @@ function AllocationSection({
           </div>
         </div>
       </div>
-
 
       {weights.length > 0 && (
         <div className="surface-card p-4 md:p-5 mt-4">
