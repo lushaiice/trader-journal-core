@@ -15,6 +15,10 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspacePreferences } from "@/lib/preferences";
 import { useTheme, type Theme } from "@/lib/theme-context";
+import { useUserSettings, useUpdateUserSettings, DEFAULT_USER_SETTINGS } from "@/lib/settings/api";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/settings")({
