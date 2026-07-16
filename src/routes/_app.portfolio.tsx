@@ -17,6 +17,7 @@ import { computeAllocation, computeConcentration, computeReturnRisk } from "@/li
 import { useCapitalState } from "@/hooks/capital";
 import { cn } from "@/lib/utils";
 import { BenchmarkSection } from "@/components/portfolio/benchmark-section";
+import { RebalanceSection } from "@/components/portfolio/rebalance-section";
 
 export const Route = createFileRoute("/_app/portfolio")({
   component: () => (
@@ -242,6 +243,8 @@ function PortfolioPage() {
           />
 
           <BenchmarkSection trades={normalized} capitalBase={capital.baseCapital} />
+
+          <RebalanceSection holdings={result.holdings} />
         </>
       )}
     </>
