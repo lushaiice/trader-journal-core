@@ -13,6 +13,8 @@ import { useTradesQuery } from "@/lib/trades/api";
 import { normalizeTrades } from "@/lib/analytics/normalize";
 import { useLatestPrices, useMarketDataFreshness, type LatestPrice } from "@/lib/market/api";
 import { buildHoldings, type Holding, type PriceRef } from "@/lib/portfolio/holdings";
+import { computeAllocation, computeConcentration, computeReturnRisk } from "@/lib/portfolio/risk";
+import { useCapitalState } from "@/hooks/capital";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/portfolio")({
@@ -86,6 +88,15 @@ function PortfolioPage() {
   const result = useMemo(
     () => buildHoldings(openTrades, priceBySymbol),
     [openTrades, priceBySymbol],
+  );
+
+  const capital = useCapitalState();
+
+  const risk = useMemo(() => computeReturnRisk(normalized), [normalized]);
+  const concentration = useMemo(() => computeConcentration(result.holdings), [result.holdings]);
+  const allocation = useMemo(
+    () => computeAllocation(openTrades, priceBySymbol, capital.baseCapital),
+    [openTrades, priceBySymbol, capital.baseCapital],
   );
 
   const handleRefresh = async () => {
@@ -215,6 +226,19 @@ function PortfolioPage() {
               <DerivativesList holdings={result.derivatives} />
             </section>
           )}
+
+          <RiskSection
+            risk={risk}
+            topWeight={concentration.topWeight}
+            topSymbol={concentration.weights[0]?.symbol ?? null}
+            herfindahl={concentration.herfindahl}
+          />
+
+          <AllocationSection
+            allocation={allocation}
+            weights={concentration.weights}
+            capitalBase={capital.baseCapital}
+          />
         </>
       )}
     </>
@@ -367,5 +391,175 @@ function Td({
     >
       {children}
     </td>
+  );
+}
+
+// ─────────────────────────── Risk section ───────────────────────────
+
+function RiskSection({
+  risk,
+  topWeight,
+  topSymbol,
+  herfindahl,
+}: {
+  risk: ReturnType<typeof computeReturnRisk>;
+  topWeight: number | null;
+  topSymbol: string | null;
+  herfindahl: number | null;
+}) {
+  const sortinoLabel = risk.sortino == null ? "—" : risk.sortino.toFixed(2);
+  const sortinoHint =
+    risk.sortino == null ? "Needs more closed trades with a losing trade" : "Per-trade, MAR = 0";
+  const volLabel = risk.volatility == null ? "—" : INR.format(risk.volatility);
+  const volHint =
+    risk.volatility == null
+      ? "Needs at least 2 closed trades"
+      : "Sample stdev of per-trade net P&L";
+  const concLabel =
+    topWeight == null
+      ? "—"
+      : `${(topWeight * 100).toFixed(1)}%${topSymbol ? ` · ${topSymbol}` : ""}`;
+  const concHint = herfindahl == null ? "No priced holdings" : `HHI ${herfindahl.toFixed(2)}`;
+
+  return (
+    <section className="mb-8">
+      <h2 className="eyebrow mb-3">Risk</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+        <MetricCard
+          label="Sortino"
+          value={sortinoLabel}
+          hint={sortinoHint}
+          tooltip="Return per unit of downside pain. Mean per-trade P&L divided by the deviation of losing trades. Higher is better."
+          tone={risk.sortino == null ? "neutral" : risk.sortino > 0 ? "positive" : "negative"}
+        />
+        <MetricCard
+          label="Volatility"
+          value={volLabel}
+          hint={volHint}
+          tooltip="Sample standard deviation of your per-trade net P&L. How much a typical trade's outcome swings around the average."
+        />
+        <MetricCard
+          label="Top holding"
+          value={concLabel}
+          hint={concHint}
+          tooltip="Share of your priced equity book in the single largest position. HHI is the sum of squared weights — 1.0 means fully concentrated."
+        />
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────── Allocation section ─────────────────────────
+
+function ShareBar({
+  a,
+  b,
+  labelA,
+  labelB,
+}: {
+  a: { value: number; share: number };
+  b: { value: number; share: number };
+  labelA: string;
+  labelB: string;
+}) {
+  const aPct = a.share * 100;
+  const bPct = b.share * 100;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between text-xs mb-1.5">
+        <span className="text-muted-foreground">
+          {labelA}{" "}
+          <span className="text-foreground font-mono tabular-nums">{aPct.toFixed(1)}%</span>
+        </span>
+        <span className="text-muted-foreground">
+          <span className="text-foreground font-mono tabular-nums">{bPct.toFixed(1)}%</span>{" "}
+          {labelB}
+        </span>
+      </div>
+      <div className="h-2 w-full rounded-full bg-muted overflow-hidden flex">
+        <div className="h-full bg-primary" style={{ width: `${aPct}%` }} />
+        <div className="h-full bg-accent" style={{ width: `${bPct}%` }} />
+      </div>
+      <div className="flex justify-between text-[11px] text-muted-foreground mt-1 font-mono tabular-nums">
+        <span>{INR.format(a.value)}</span>
+        <span>{INR.format(b.value)}</span>
+      </div>
+    </div>
+  );
+}
+
+function AllocationSection({
+  allocation,
+  weights,
+  capitalBase,
+}: {
+  allocation: ReturnType<typeof computeAllocation>;
+  weights: { symbol: string; weight: number }[];
+  capitalBase: number;
+}) {
+  const hasDeployed = allocation.deployedValue > 0;
+  return (
+    <section className="mb-8">
+      <h2 className="eyebrow mb-3">Allocation &amp; exposure</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+        <div className="surface-card p-4 md:p-5 flex flex-col gap-4 md:col-span-2">
+          {hasDeployed ? (
+            <>
+              <ShareBar
+                a={allocation.byInstrument.equity}
+                b={allocation.byInstrument.derivatives}
+                labelA="Equity"
+                labelB="Derivatives"
+              />
+              <ShareBar
+                a={allocation.byDirection.long}
+                b={allocation.byDirection.short}
+                labelA="Long"
+                labelB="Short"
+              />
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">No open positions to allocate.</p>
+          )}
+        </div>
+        <div className="surface-card p-4 md:p-5 flex flex-col gap-2">
+          <span className="eyebrow text-muted-foreground">Deployed vs capital</span>
+          <p className="font-display text-xl md:text-2xl font-semibold tabular-nums tracking-tight">
+            {allocation.exposurePct == null ? "—" : `${(allocation.exposurePct * 100).toFixed(1)}%`}
+          </p>
+          <p className="text-[11px] text-muted-foreground font-mono tabular-nums">
+            {INR.format(allocation.deployedValue)}
+            {capitalBase > 0 ? <> of {INR.format(capitalBase)}</> : null}
+          </p>
+          {allocation.exposurePct == null && (
+            <p className="text-[11px] text-muted-foreground">
+              Set an initial capital event to see exposure.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {weights.length > 0 && (
+        <div className="surface-card p-4 md:p-5 mt-4">
+          <span className="eyebrow text-muted-foreground">Top holdings by weight</span>
+          <ul className="mt-3 flex flex-col gap-2">
+            {weights.slice(0, 5).map((w) => (
+              <li key={w.symbol} className="flex items-center gap-3 text-sm">
+                <span className="w-28 truncate font-medium">{w.symbol}</span>
+                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary"
+                    style={{ width: `${(w.weight * 100).toFixed(2)}%` }}
+                  />
+                </div>
+                <span className="w-14 text-right font-mono tabular-nums text-xs">
+                  {(w.weight * 100).toFixed(1)}%
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 }
