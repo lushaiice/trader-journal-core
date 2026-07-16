@@ -152,6 +152,15 @@ export function RebalanceSection({ holdings }: Props) {
         <div className="surface-card p-6 text-sm text-muted-foreground text-center">
           No priced holdings to rebalance yet.
         </div>
+      ) : included.length === 0 ? (
+        <>
+          <div className="surface-card p-6 text-sm text-muted-foreground text-center">
+            All holdings removed — add at least one back to run the math.
+          </div>
+          {removed.length > 0 && (
+            <RemovedArea removed={removed} onAddBack={addBackSymbol} />
+          )}
+        </>
       ) : (
         <>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
@@ -199,6 +208,7 @@ export function RebalanceSection({ holdings }: Props) {
                     <Th align="center">Action</Th>
                     <Th align="right">Δ value</Th>
                     <Th align="right">Δ shares</Th>
+                    <Th align="center"> </Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -256,6 +266,17 @@ export function RebalanceSection({ holdings }: Props) {
                               ? "—"
                               : `~${row.deltaShares > 0 ? "+" : ""}${NUM.format(row.deltaShares)} sh`}
                         </Td>
+                        <Td align="center">
+                          <button
+                            type="button"
+                            onClick={() => removeSymbol(row.symbol)}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                            aria-label={`Remove ${row.symbol} from rebalance`}
+                            title={`Remove ${row.symbol}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </Td>
                       </tr>
                     );
                   })}
@@ -264,12 +285,46 @@ export function RebalanceSection({ holdings }: Props) {
             </div>
           </div>
 
+          {removed.length > 0 && (
+            <RemovedArea removed={removed} onAddBack={addBackSymbol} />
+          )}
+
           <p className="text-[11px] text-muted-foreground mt-2">
             Values use the last cached end-of-day close. Assumes total portfolio value is held
             constant — no new capital added.
           </p>
         </>
       )}
+    </section>
+  );
+}
+
+function RemovedArea({
+  removed,
+  onAddBack,
+}: {
+  removed: Holding[];
+  onAddBack: (symbol: string) => void;
+}) {
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <span className="eyebrow text-muted-foreground">Removed</span>
+      {removed.map((h) => (
+        <button
+          key={h.symbol}
+          type="button"
+          onClick={() => onAddBack(h.symbol)}
+          className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card/50 px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:border-primary/60 transition-colors"
+          aria-label={`Add ${h.symbol} back to rebalance`}
+        >
+          <span className="font-medium text-foreground">{h.symbol}</span>
+          <Plus className="h-3 w-3 text-primary" />
+          <span className="text-[10px] uppercase tracking-wide">Add back</span>
+        </button>
+      ))}
+    </div>
+  );
+}
     </section>
   );
 }
