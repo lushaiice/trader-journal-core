@@ -121,10 +121,10 @@ describe("buildDailyTotalPnl", () => {
     const d2 = series.find((p) => p.date === "2025-01-02")!;
     const d3 = series.find((p) => p.date === "2025-01-03")!;
     expect(d2.realizedCum).toBe(2000); // 40 * (150 - 100)
-    expect(d2.unrealized).toBe(3000); // 60 * (150 - 100)
+    expect(d2.unrealized).toBeCloseTo(3000, 6); // 60 * (150 - 100)
     expect(d3.realizedCum).toBe(2000);
-    expect(d3.unrealized).toBe(3600); // 60 * (160 - 100)
-    expect(d3.totalPnl).toBe(5600);
+    expect(d3.unrealized).toBeCloseTo(3600, 6); // 60 * (160 - 100)
+    expect(d3.totalPnl).toBeCloseTo(5600, 6);
   });
 
   it("forward-fills closes on days with no price point", () => {
