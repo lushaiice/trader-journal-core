@@ -5,7 +5,7 @@ import {
   PlusCircle,
   History,
   BarChart3,
-  
+  PieChart,
   Settings,
   LogOut,
   TrendingUp,
@@ -17,12 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -33,7 +28,8 @@ const NAV = [
   { to: "/add-trade", label: "Add Trade", icon: PlusCircle },
   { to: "/trades", label: "Trades", icon: History },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  
+  { to: "/portfolio", label: "Portfolio", icon: PieChart },
+
   { to: "/journal-timeline", label: "Timeline", icon: Clock },
   { to: "/weekly-review", label: "Weekly Review", icon: CalendarRange },
   { to: "/capital", label: "Capital", icon: Wallet },
