@@ -16,6 +16,7 @@ import { buildHoldings, type Holding, type PriceRef } from "@/lib/portfolio/hold
 import { computeAllocation, computeConcentration, computeReturnRisk } from "@/lib/portfolio/risk";
 import { useCapitalState } from "@/hooks/capital";
 import { cn } from "@/lib/utils";
+import { BenchmarkSection } from "@/components/portfolio/benchmark-section";
 
 export const Route = createFileRoute("/_app/portfolio")({
   component: () => (
