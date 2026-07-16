@@ -27,7 +27,7 @@ import {
 import { formatINR } from "@/lib/trades/calculations";
 import { formatPercent, formatRatio, formatRMultiple } from "@/lib/analytics/format";
 import type { TimeRangeKey } from "@/types/analytics";
-import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
+
 import { TimeRangeSelector } from "./time-range-selector";
 import { MetricCard } from "./metric-card";
 import { DrawdownChart } from "./drawdown-chart";
