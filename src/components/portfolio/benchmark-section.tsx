@@ -148,7 +148,8 @@ export function BenchmarkSection({ trades, capitalBase, inceptionDate }: Props) 
         <div>
           <h2 className="eyebrow mb-1">Benchmark</h2>
           <p className="text-xs text-muted-foreground">
-            Cumulative trading return vs a market index, normalized from the window start.
+            Portfolio line is total return — realized + unrealized (mark-to-market) — on
+            capital. Benchmark uses EOD closes (Yahoo Finance).
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
