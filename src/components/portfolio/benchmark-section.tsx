@@ -218,8 +218,10 @@ export function BenchmarkSection({ trades, capitalBase }: Props) {
                       fontSize: 12,
                     }}
                     labelFormatter={(v) => format(new Date(v as number), "dd MMM yyyy")}
-                    formatter={(value: number | null, name) => [
-                      value == null ? "—" : `${value.toFixed(2)}%`,
+                    formatter={(value, name) => [
+                      value == null || typeof value !== "number"
+                        ? "—"
+                        : `${value.toFixed(2)}%`,
                       name === "portfolio" ? "Portfolio" : indexName,
                     ]}
                   />
