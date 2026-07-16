@@ -65,9 +65,7 @@ function Dashboard() {
       (trades.data ?? [])
         .slice()
         .sort(
-          (a, b) =>
-            new Date(b.trade.entry_date).getTime() -
-            new Date(a.trade.entry_date).getTime(),
+          (a, b) => new Date(b.trade.entry_date).getTime() - new Date(a.trade.entry_date).getTime(),
         )
         .slice(0, 5),
     [trades.data],
@@ -176,9 +174,7 @@ function Dashboard() {
                   label="Expectancy"
                   value={summary.expectancy != null ? formatINR(summary.expectancy) : "—"}
                   tone={
-                    summary.expectancy != null && summary.expectancy >= 0
-                      ? "positive"
-                      : "negative"
+                    summary.expectancy != null && summary.expectancy >= 0 ? "positive" : "negative"
                   }
                   icon={Sigma}
                   hint="per trade"
@@ -241,27 +237,17 @@ interface JournalStatusProps {
   consistencyDays: number;
 }
 
-function JournalStatusCard({
-  journaledToday,
-  tradesToday,
-  consistencyDays,
-}: JournalStatusProps) {
+function JournalStatusCard({ journaledToday, tradesToday, consistencyDays }: JournalStatusProps) {
   const Icon = journaledToday ? CheckCircle2 : Circle;
   return (
     <div className="surface-card p-5 md:p-6 space-y-4">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="font-medium">Today at a glance</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Small acts, repeated calmly.
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">Small acts, repeated calmly.</p>
         </div>
         <Icon
-          className={
-            journaledToday
-              ? "h-5 w-5 text-success"
-              : "h-5 w-5 text-muted-foreground"
-          }
+          className={journaledToday ? "h-5 w-5 text-success" : "h-5 w-5 text-muted-foreground"}
           aria-hidden
         />
       </div>

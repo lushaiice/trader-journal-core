@@ -13,11 +13,7 @@ import {
   type ProcessQualityBreakdown,
   type StreakSummary,
 } from "@/lib/behavior";
-import {
-  fetchJournalDates,
-  fetchReviewDates,
-  fetchChecklistDates,
-} from "@/services/workspace";
+import { fetchJournalDates, fetchReviewDates, fetchChecklistDates } from "@/services/workspace";
 
 const EMPTY_STREAK: StreakSummary = { current: 0, longest: 0, last7: 0, last30: 0 };
 

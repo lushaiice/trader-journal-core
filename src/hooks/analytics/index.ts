@@ -59,9 +59,7 @@ export interface PortfolioAnalyticsResult {
   discipline: DisciplineAnalytics;
 }
 
-export function usePortfolioAnalytics(
-  opts: UseAnalyticsOptions = {},
-): PortfolioAnalyticsResult {
+export function usePortfolioAnalytics(opts: UseAnalyticsOptions = {}): PortfolioAnalyticsResult {
   const {
     range: rangeKey = "ALL",
     baseCapital = 0,
@@ -125,14 +123,10 @@ export function useTagAnalytics(opts: UseAnalyticsOptions = {}): TagAnalytics[] 
   return usePortfolioAnalytics(opts).tags;
 }
 
-export function useEmotionalAnalytics(
-  opts: UseAnalyticsOptions = {},
-): EmotionalAnalytics {
+export function useEmotionalAnalytics(opts: UseAnalyticsOptions = {}): EmotionalAnalytics {
   return usePortfolioAnalytics(opts).emotional;
 }
 
-export function useDisciplineAnalytics(
-  opts: UseAnalyticsOptions = {},
-): DisciplineAnalytics {
+export function useDisciplineAnalytics(opts: UseAnalyticsOptions = {}): DisciplineAnalytics {
   return usePortfolioAnalytics(opts).discipline;
 }

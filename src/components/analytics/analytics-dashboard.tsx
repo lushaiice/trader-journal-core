@@ -19,11 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  usePortfolioAnalytics,
-  type AssetFilter,
-  type SideFilter,
-} from "@/hooks/analytics";
+import { usePortfolioAnalytics, type AssetFilter, type SideFilter } from "@/hooks/analytics";
 import { formatINR } from "@/lib/trades/calculations";
 import { formatPercent, formatRatio, formatRMultiple } from "@/lib/analytics/format";
 import type { TimeRangeKey } from "@/types/analytics";
@@ -39,15 +35,9 @@ import { AnalyticsEmptyState } from "./analytics-empty-state";
 import { DailyReflection } from "./daily-reflection";
 import { AnalyticsSkeleton } from "./analytics-skeleton";
 import { MethodologyNote, DEFAULT_METHODOLOGY } from "./methodology-note";
-import {
-  CapitalAwareEquityChart,
-  FirstCapitalPrompt,
-} from "@/components/capital";
+import { CapitalAwareEquityChart, FirstCapitalPrompt } from "@/components/capital";
 import { useCapitalState } from "@/hooks/capital";
-import {
-  buildCapitalAdjustedEquityCurve,
-  computeCapitalAdjustedReturn,
-} from "@/lib/capital";
+import { buildCapitalAdjustedEquityCurve, computeCapitalAdjustedReturn } from "@/lib/capital";
 
 interface Props {
   baseCapital?: number;
@@ -65,10 +55,17 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
     assetFilter: asset,
     sideFilter: side,
   });
-  
 
-  const { summary, equityCurve, drawdownSeries, drawdown, emotional, discipline, tags, filteredTrades } =
-    analytics;
+  const {
+    summary,
+    equityCurve,
+    drawdownSeries,
+    drawdown,
+    emotional,
+    discipline,
+    tags,
+    filteredTrades,
+  } = analytics;
 
   const adjustedCurve = useMemo(
     () =>
@@ -82,10 +79,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
       ),
     [equityCurve, capital.events],
   );
-  const capitalReturn = useMemo(
-    () => computeCapitalAdjustedReturn(adjustedCurve),
-    [adjustedCurve],
-  );
+  const capitalReturn = useMemo(() => computeCapitalAdjustedReturn(adjustedCurve), [adjustedCurve]);
 
   if (analytics.isLoading) return <AnalyticsSkeleton />;
 
@@ -176,9 +170,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
           <MetricCard
             label="Expectancy"
             value={summary.expectancy != null ? formatINR(summary.expectancy) : "—"}
-            tone={
-              summary.expectancy != null && summary.expectancy >= 0 ? "positive" : "negative"
-            }
+            tone={summary.expectancy != null && summary.expectancy >= 0 ? "positive" : "negative"}
             icon={Sigma}
             tooltip="Average net P&L per trade in range."
           />
@@ -186,9 +178,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
             label="Average R"
             value={formatRMultiple(summary.avgRMultiple)}
             tone={
-              summary.avgRMultiple != null && summary.avgRMultiple >= 0
-                ? "positive"
-                : "negative"
+              summary.avgRMultiple != null && summary.avgRMultiple >= 0 ? "positive" : "negative"
             }
             icon={Activity}
             tooltip="Average R-multiple — reward relative to risk per trade."
@@ -198,7 +188,11 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
             value={formatPercent(drawdown.maxDrawdownPct)}
             tone={drawdown.maxDrawdownPct < 0 ? "negative" : "neutral"}
             icon={TrendingDown}
-            hint={drawdown.currentDrawdownPct < 0 ? `Now ${formatPercent(drawdown.currentDrawdownPct)}` : "Recovered"}
+            hint={
+              drawdown.currentDrawdownPct < 0
+                ? `Now ${formatPercent(drawdown.currentDrawdownPct)}`
+                : "Recovered"
+            }
             tooltip="Largest peak-to-trough decline in equity."
           />
           <MetricCard
@@ -288,10 +282,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
           <div className="lg:col-span-2">
             <DisciplineCard data={discipline} />
           </div>
-          <DailyReflection
-            trades={analytics.trades}
-            disciplineToday={discipline.averageScore}
-          />
+          <DailyReflection trades={analytics.trades} disciplineToday={discipline.averageScore} />
         </div>
       </AnalyticsSection>
 
@@ -313,8 +304,6 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
       )}
 
       <MethodologyNote items={DEFAULT_METHODOLOGY} />
-
-      
     </div>
   );
 }
