@@ -233,6 +233,19 @@ function PortfolioPage() {
               <DerivativesList holdings={result.derivatives} />
             </section>
           )}
+
+          <RiskSection
+            risk={risk}
+            topWeight={concentration.topWeight}
+            topSymbol={concentration.weights[0]?.symbol ?? null}
+            herfindahl={concentration.herfindahl}
+          />
+
+          <AllocationSection
+            allocation={allocation}
+            weights={concentration.weights}
+            capitalBase={capital.baseCapital}
+          />
         </>
       )}
     </>
