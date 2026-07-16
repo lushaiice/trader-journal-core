@@ -204,6 +204,21 @@ function Dashboard() {
           </AnalyticsSection>
         </SectionErrorBoundary>
 
+        {/* Benchmark comparison */}
+        {hasTrades && capital.baseCapital > 0 && (
+          <SectionErrorBoundary
+            title="Benchmark comparison is temporarily unavailable."
+            description="Try again in a moment."
+          >
+            <BenchmarkSection
+              trades={normalized}
+              capitalBase={capital.baseCapital}
+              inceptionDate={inceptionDate}
+              defaultRange="INCEPTION"
+            />
+          </SectionErrorBoundary>
+        )}
+
         {/* Recent trades */}
         <AnalyticsSection
           title="Recent trades"
