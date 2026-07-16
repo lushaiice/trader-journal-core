@@ -101,7 +101,8 @@ describe("buildBenchmarkComparison", () => {
     // benchmark: 110/100 - 1 = 0.10
     expect(r.benchmarkReturn).toBeCloseTo(0.1, 10);
   });
-});
+
+
 
   it("respects the fromDate window", () => {
     const r = buildBenchmarkComparison({
