@@ -11,11 +11,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useTradesQuery } from "@/lib/trades/api";
 import { normalizeTrades } from "@/lib/analytics/normalize";
-import {
-  useLatestPrices,
-  useMarketDataFreshness,
-  type LatestPrice,
-} from "@/lib/market/api";
+import { useLatestPrices, useMarketDataFreshness, type LatestPrice } from "@/lib/market/api";
 import { buildHoldings, type Holding, type PriceRef } from "@/lib/portfolio/holdings";
 import { cn } from "@/lib/utils";
 
@@ -106,9 +102,7 @@ function PortfolioPage() {
       ]);
       toast.success("Prices refreshed");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Could not refresh prices",
-      );
+      toast.error(err instanceof Error ? err.message : "Could not refresh prices");
     } finally {
       setRefreshing(false);
     }
@@ -117,7 +111,7 @@ function PortfolioPage() {
   const loading = tradesQuery.isLoading;
   const hasAnyOpen =
     openTrades.length > 0 &&
-    (result.holdings.length + result.unpricedEquity.length + result.derivatives.length) > 0;
+    result.holdings.length + result.unpricedEquity.length + result.derivatives.length > 0;
 
   const pnlTone =
     result.totals.unrealizedPnl > 0
@@ -125,10 +119,7 @@ function PortfolioPage() {
       : result.totals.unrealizedPnl < 0
         ? "negative"
         : "neutral";
-  const pnlPctLabel =
-    result.totals.unrealizedPct == null
-      ? "—"
-      : PCT(result.totals.unrealizedPct);
+  const pnlPctLabel = result.totals.unrealizedPct == null ? "—" : PCT(result.totals.unrealizedPct);
 
   const asOf = freshness.data?.fetchedAt
     ? new Date(freshness.data.fetchedAt).toLocaleString("en-IN", {
@@ -161,8 +152,8 @@ function PortfolioPage() {
 
       <div className="surface-card p-3 md:p-4 mb-6 text-xs text-muted-foreground flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
         <span>
-          Market data: <span className="text-foreground">Yahoo Finance</span> —
-          end-of-day, delayed. Not a live quote.
+          Market data: <span className="text-foreground">Yahoo Finance</span> — end-of-day, delayed.
+          Not a live quote.
         </span>
         <span>
           {asOf ? <>Last synced {asOf}</> : "No sync yet"}
@@ -190,10 +181,7 @@ function PortfolioPage() {
               value={INR.format(result.totals.marketValue)}
               hint={`${result.totals.pricedCount} priced`}
             />
-            <MetricCard
-              label="Invested (cost)"
-              value={INR.format(result.totals.costValue)}
-            />
+            <MetricCard label="Invested (cost)" value={INR.format(result.totals.costValue)} />
             <MetricCard
               label="Unrealized P&L"
               tone={pnlTone}
@@ -202,9 +190,7 @@ function PortfolioPage() {
             />
             <MetricCard
               label="Holdings"
-              value={String(
-                result.holdings.length + result.unpricedEquity.length,
-              )}
+              value={String(result.holdings.length + result.unpricedEquity.length)}
               hint={
                 result.totals.unpricedCount
                   ? `${result.totals.unpricedCount} pending price`
@@ -216,9 +202,7 @@ function PortfolioPage() {
           {(result.holdings.length > 0 || result.unpricedEquity.length > 0) && (
             <section className="mb-8">
               <h2 className="eyebrow mb-3">Equity holdings</h2>
-              <HoldingsTable
-                holdings={[...result.holdings, ...result.unpricedEquity]}
-              />
+              <HoldingsTable holdings={[...result.holdings, ...result.unpricedEquity]} />
             </section>
           )}
 
@@ -286,9 +270,7 @@ function HoldingsTable({ holdings }: { holdings: Holding[] }) {
                         </div>
                       </>
                     ) : (
-                      <span className="text-muted-foreground italic text-xs">
-                        price pending
-                      </span>
+                      <span className="text-muted-foreground italic text-xs">price pending</span>
                     )}
                   </Td>
                   <Td align="right" mono>
@@ -325,10 +307,7 @@ function DerivativesList({ holdings }: { holdings: Holding[] }) {
           </thead>
           <tbody>
             {holdings.map((h) => (
-              <tr
-                key={h.symbol}
-                className="border-b border-border/40 last:border-b-0"
-              >
+              <tr key={h.symbol} className="border-b border-border/40 last:border-b-0">
                 <Td>
                   <span className="font-medium">{h.symbol}</span>
                   <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -353,13 +332,7 @@ function DerivativesList({ holdings }: { holdings: Holding[] }) {
   );
 }
 
-function Th({
-  children,
-  align = "left",
-}: {
-  children: React.ReactNode;
-  align?: "left" | "right";
-}) {
+function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
     <th
       className={cn(
