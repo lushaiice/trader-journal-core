@@ -78,6 +78,20 @@ export function buildDailyTotalPnl({
     priceMap.set(sym, sorted);
   }
 
+  // Anchor each position to its entry-date close (last close on/before entryIso).
+  // Missing anchor (entry predates history) → no valuation, contributes 0.
+  const anchorClose = new Map<TradeCtx, number>();
+  for (const c of ctxs) {
+    const series = priceMap.get(c.trade.symbol);
+    if (!series) continue;
+    let anchor: number | null = null;
+    for (const p of series) {
+      if (p.price_date <= c.entryIso) anchor = p.close;
+      else break;
+    }
+    if (anchor != null && anchor > 0) anchorClose.set(c, anchor);
+  }
+
   const dateSet = new Set<string>();
   for (const c of ctxs) {
     if (inWindow(c.entryIso)) dateSet.add(c.entryIso);
@@ -124,7 +138,9 @@ export function buildDailyTotalPnl({
       if (remaining <= 0) continue;
       const close = lastClose.get(c.trade.symbol);
       if (close == null) continue;
-      unrealized += (close - c.trade.entryPrice) * remaining * c.sideSign;
+      const anchor = anchorClose.get(c);
+      if (anchor == null) continue;
+      unrealized += c.trade.entryPrice * remaining * c.sideSign * (close / anchor - 1);
     }
 
     result.push({ date, realizedCum: realized, unrealized, totalPnl: realized + unrealized });
