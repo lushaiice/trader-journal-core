@@ -62,6 +62,18 @@ function Dashboard() {
     Boolean(t.trade.review_notes || t.trade.lessons_learned),
   );
 
+  const normalized = useMemo(
+    () => (trades.data ? normalizeTrades(trades.data) : []),
+    [trades.data],
+  );
+
+  const inceptionDate = useMemo<string | null>(() => {
+    if (!capital.events.length) return null;
+    let earliest = capital.events[0].eventDate;
+    for (const e of capital.events) if (e.eventDate < earliest) earliest = e.eventDate;
+    return earliest;
+  }, [capital.events]);
+
   const recent = useMemo(
     () =>
       (trades.data ?? [])
