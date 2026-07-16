@@ -240,6 +240,8 @@ function PortfolioPage() {
             weights={concentration.weights}
             capitalBase={capital.baseCapital}
           />
+
+          <BenchmarkSection trades={normalized} capitalBase={capital.baseCapital} />
         </>
       )}
     </>
