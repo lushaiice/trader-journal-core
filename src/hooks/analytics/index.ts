@@ -110,7 +110,7 @@ export function usePortfolioAnalytics(
       emotional,
       discipline,
     };
-  }, [data, isLoading, isError, rangeKey, baseCapital]);
+  }, [data, isLoading, isError, rangeKey, baseCapital, assetFilter, sideFilter]);
 }
 
 export function useEquityCurve(opts: UseAnalyticsOptions = {}): EquityPoint[] {
