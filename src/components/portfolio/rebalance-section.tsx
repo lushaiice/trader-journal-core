@@ -64,10 +64,7 @@ export function RebalanceSection({ holdings }: Props) {
     [priced],
   );
 
-  const result = useMemo(
-    () => computeRebalance(input, numericTargets),
-    [input, numericTargets],
-  );
+  const result = useMemo(() => computeRebalance(input, numericTargets), [input, numericTargets]);
 
   const resetToCurrent = () => {
     setTargets(Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, v.toFixed(2)])));
@@ -79,9 +76,9 @@ export function RebalanceSection({ holdings }: Props) {
 
       <div className="surface-card p-4 md:p-5 mb-3 border-l-2 border-primary/50 bg-primary/5">
         <p className="text-xs md:text-sm text-foreground leading-relaxed">
-          <span className="font-medium">This is a calculation tool, not investment advice.</span>{" "}
-          It shows the math to reach the target weights you set — nothing more. It never
-          recommends securities, promises outcomes, or places orders. You decide and act.
+          <span className="font-medium">This is a calculation tool, not investment advice.</span> It
+          shows the math to reach the target weights you set — nothing more. It never recommends
+          securities, promises outcomes, or places orders. You decide and act.
         </p>
       </div>
 

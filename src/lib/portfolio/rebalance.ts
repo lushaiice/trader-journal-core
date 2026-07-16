@@ -64,8 +64,7 @@ export function computeRebalance(
     const targetWeight = pct / 100;
     const targetValue = targetWeight * total;
     const deltaValue = targetValue - h.marketValue;
-    const deltaShares =
-      h.lastClose != null && h.lastClose > 0 ? deltaValue / h.lastClose : null;
+    const deltaShares = h.lastClose != null && h.lastClose > 0 ? deltaValue / h.lastClose : null;
     const action: RebalanceAction =
       deltaValue > VALUE_TOL ? "buy" : deltaValue < -VALUE_TOL ? "sell" : "hold";
     return {

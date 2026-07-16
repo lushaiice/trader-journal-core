@@ -46,10 +46,7 @@ describe("computeRebalance", () => {
   });
 
   it("lastClose 0 yields null deltaShares", () => {
-    const r = computeRebalance(
-      [{ symbol: "X", marketValue: 1000, lastClose: 0 }],
-      { X: 50 },
-    );
+    const r = computeRebalance([{ symbol: "X", marketValue: 1000, lastClose: 0 }], { X: 50 });
     expect(r.rows[0].deltaShares).toBeNull();
   });
 
