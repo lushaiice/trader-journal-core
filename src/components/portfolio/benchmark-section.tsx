@@ -206,7 +206,6 @@ export function BenchmarkSection({ trades, capitalBase, inceptionDate }: Props) 
         </div>
       </div>
 
-
       <div className="surface-card p-4 md:p-5">
         {noCapital ? (
           <div className="py-8 text-center text-sm text-muted-foreground">

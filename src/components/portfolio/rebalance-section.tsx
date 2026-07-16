@@ -51,14 +51,8 @@ export function RebalanceSection({ holdings }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricedSig]);
 
-  const included = useMemo(
-    () => priced.filter((h) => !excluded.has(h.symbol)),
-    [priced, excluded],
-  );
-  const removed = useMemo(
-    () => priced.filter((h) => excluded.has(h.symbol)),
-    [priced, excluded],
-  );
+  const included = useMemo(() => priced.filter((h) => !excluded.has(h.symbol)), [priced, excluded]);
+  const removed = useMemo(() => priced.filter((h) => excluded.has(h.symbol)), [priced, excluded]);
 
   const includedDefaults = useMemo(() => currentWeights(included), [included]);
   const [targets, setTargets] = useState<Record<string, string>>({});
@@ -69,9 +63,7 @@ export function RebalanceSection({ holdings }: Props) {
   // included ones from the fresh (subset-relative) current weights.
   useEffect(() => {
     setTargets(
-      Object.fromEntries(
-        Object.entries(currentWeights(priced)).map(([k, v]) => [k, v.toFixed(2)]),
-      ),
+      Object.fromEntries(Object.entries(currentWeights(priced)).map(([k, v]) => [k, v.toFixed(2)])),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricedSig]);
@@ -113,9 +105,7 @@ export function RebalanceSection({ holdings }: Props) {
 
   const resetToCurrent = () => {
     setTargets(
-      Object.fromEntries(
-        Object.entries(includedDefaults).map(([k, v]) => [k, v.toFixed(2)]),
-      ),
+      Object.fromEntries(Object.entries(includedDefaults).map(([k, v]) => [k, v.toFixed(2)])),
     );
   };
 
@@ -134,7 +124,6 @@ export function RebalanceSection({ holdings }: Props) {
       return next;
     });
   };
-
 
   return (
     <section className="mb-8">
@@ -157,9 +146,7 @@ export function RebalanceSection({ holdings }: Props) {
           <div className="surface-card p-6 text-sm text-muted-foreground text-center">
             All holdings removed — add at least one back to run the math.
           </div>
-          {removed.length > 0 && (
-            <RemovedArea removed={removed} onAddBack={addBackSymbol} />
-          )}
+          {removed.length > 0 && <RemovedArea removed={removed} onAddBack={addBackSymbol} />}
         </>
       ) : (
         <>
@@ -285,9 +272,7 @@ export function RebalanceSection({ holdings }: Props) {
             </div>
           </div>
 
-          {removed.length > 0 && (
-            <RemovedArea removed={removed} onAddBack={addBackSymbol} />
-          )}
+          {removed.length > 0 && <RemovedArea removed={removed} onAddBack={addBackSymbol} />}
 
           <p className="text-[11px] text-muted-foreground mt-2">
             Values use the last cached end-of-day close. Assumes total portfolio value is held
