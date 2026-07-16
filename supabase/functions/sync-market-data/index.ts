@@ -81,15 +81,14 @@ async function getHeldSymbols(
 ): Promise<Array<{ symbol: string; isin: string | null }>> {
   const { data, error } = await supabase
     .from("trades")
-    .select("symbol, isin")
+    .select("symbol")
     .in("status", ["open", "partial"]);
   if (error) throw error;
-  const seen = new Map<string, string | null>();
+  const seen = new Set<string>();
   for (const row of data ?? []) {
-    if (!row.symbol) continue;
-    if (!seen.has(row.symbol)) seen.set(row.symbol, row.isin ?? null);
+    if (row.symbol) seen.add(row.symbol);
   }
-  return Array.from(seen.entries()).map(([symbol, isin]) => ({ symbol, isin }));
+  return Array.from(seen).map((symbol) => ({ symbol, isin: null }));
 }
 
 Deno.serve(async (req: Request) => {
