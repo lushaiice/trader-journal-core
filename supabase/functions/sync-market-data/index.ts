@@ -81,8 +81,7 @@ async function getHeldSymbols(
 ): Promise<Array<{ symbol: string; isin: string | null }>> {
   const { data, error } = await supabase
     .from("trades")
-    .select("symbol")
-    .in("status", ["open", "partial"]);
+    .select("symbol, instrument_type");
   if (error) throw error;
   const seen = new Set<string>();
   for (const row of data ?? []) {
