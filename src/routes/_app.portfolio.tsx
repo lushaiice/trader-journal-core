@@ -13,11 +13,7 @@ import { useTradesQuery } from "@/lib/trades/api";
 import { normalizeTrades } from "@/lib/analytics/normalize";
 import { useLatestPrices, useMarketDataFreshness, type LatestPrice } from "@/lib/market/api";
 import { buildHoldings, type Holding, type PriceRef } from "@/lib/portfolio/holdings";
-import {
-  computeAllocation,
-  computeConcentration,
-  computeReturnRisk,
-} from "@/lib/portfolio/risk";
+import { computeAllocation, computeConcentration, computeReturnRisk } from "@/lib/portfolio/risk";
 import { useCapitalState } from "@/hooks/capital";
 import { cn } from "@/lib/utils";
 
@@ -97,10 +93,7 @@ function PortfolioPage() {
   const capital = useCapitalState();
 
   const risk = useMemo(() => computeReturnRisk(normalized), [normalized]);
-  const concentration = useMemo(
-    () => computeConcentration(result.holdings),
-    [result.holdings],
-  );
+  const concentration = useMemo(() => computeConcentration(result.holdings), [result.holdings]);
   const allocation = useMemo(
     () => computeAllocation(openTrades, priceBySymbol, capital.baseCapital),
     [openTrades, priceBySymbol, capital.baseCapital],
@@ -414,19 +407,19 @@ function RiskSection({
   topSymbol: string | null;
   herfindahl: number | null;
 }) {
-  const sortinoLabel =
-    risk.sortino == null ? "—" : risk.sortino.toFixed(2);
+  const sortinoLabel = risk.sortino == null ? "—" : risk.sortino.toFixed(2);
   const sortinoHint =
     risk.sortino == null ? "Needs more closed trades with a losing trade" : "Per-trade, MAR = 0";
   const volLabel = risk.volatility == null ? "—" : INR.format(risk.volatility);
   const volHint =
-    risk.volatility == null ? "Needs at least 2 closed trades" : "Sample stdev of per-trade net P&L";
+    risk.volatility == null
+      ? "Needs at least 2 closed trades"
+      : "Sample stdev of per-trade net P&L";
   const concLabel =
     topWeight == null
       ? "—"
       : `${(topWeight * 100).toFixed(1)}%${topSymbol ? ` · ${topSymbol}` : ""}`;
-  const concHint =
-    herfindahl == null ? "No priced holdings" : `HHI ${herfindahl.toFixed(2)}`;
+  const concHint = herfindahl == null ? "No priced holdings" : `HHI ${herfindahl.toFixed(2)}`;
 
   return (
     <section className="mb-8">
@@ -475,10 +468,12 @@ function ShareBar({
     <div>
       <div className="flex items-baseline justify-between text-xs mb-1.5">
         <span className="text-muted-foreground">
-          {labelA} <span className="text-foreground font-mono tabular-nums">{aPct.toFixed(1)}%</span>
+          {labelA}{" "}
+          <span className="text-foreground font-mono tabular-nums">{aPct.toFixed(1)}%</span>
         </span>
         <span className="text-muted-foreground">
-          <span className="text-foreground font-mono tabular-nums">{bPct.toFixed(1)}%</span> {labelB}
+          <span className="text-foreground font-mono tabular-nums">{bPct.toFixed(1)}%</span>{" "}
+          {labelB}
         </span>
       </div>
       <div className="h-2 w-full rounded-full bg-muted overflow-hidden flex">
@@ -530,9 +525,7 @@ function AllocationSection({
         <div className="surface-card p-4 md:p-5 flex flex-col gap-2">
           <span className="eyebrow text-muted-foreground">Deployed vs capital</span>
           <p className="font-display text-xl md:text-2xl font-semibold tabular-nums tracking-tight">
-            {allocation.exposurePct == null
-              ? "—"
-              : `${(allocation.exposurePct * 100).toFixed(1)}%`}
+            {allocation.exposurePct == null ? "—" : `${(allocation.exposurePct * 100).toFixed(1)}%`}
           </p>
           <p className="text-[11px] text-muted-foreground font-mono tabular-nums">
             {INR.format(allocation.deployedValue)}

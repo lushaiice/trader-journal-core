@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  computeAllocation,
-  computeConcentration,
-  computeReturnRisk,
-} from "@/lib/portfolio/risk";
+import { computeAllocation, computeConcentration, computeReturnRisk } from "@/lib/portfolio/risk";
 import type { Holding } from "@/lib/portfolio/holdings";
 import type { NormalizedTrade } from "@/types/analytics";
 
@@ -158,11 +154,7 @@ describe("computeAllocation", () => {
         },
       }),
     ];
-    const a = computeAllocation(
-      trades,
-      { INFY: { close: 120 }, SHRT: { close: 90 } },
-      100000,
-    );
+    const a = computeAllocation(trades, { INFY: { close: 120 }, SHRT: { close: 90 } }, 100000);
     // equity = 7200 + 900 = 8100; derivatives = 10000; deployed = 18100
     expect(a.deployedValue).toBe(18100);
     expect(a.byInstrument.equity.value).toBe(8100);

@@ -117,8 +117,7 @@ export function computeAllocation(
     const instrumentType = String(t.raw.trade.instrument_type ?? "equity");
     const isEquity = instrumentType === "equity";
     const price = priceBySymbol[t.symbol];
-    const unit =
-      isEquity && price && Number.isFinite(price.close) ? price.close : t.entryPrice;
+    const unit = isEquity && price && Number.isFinite(price.close) ? price.close : t.entryPrice;
     const value = remaining * unit;
 
     if (isEquity) equityVal += value;
