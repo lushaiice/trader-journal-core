@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
-  History,
   PlusCircle,
   Wallet,
   Target,
@@ -13,13 +12,21 @@ import {
   Sigma,
   Hash,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { usePortfolioAnalytics } from "@/hooks/analytics";
-import { useTradesQuery } from "@/lib/trades/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  usePortfolioAnalytics,
+  type AssetFilter,
+  type SideFilter,
+} from "@/hooks/analytics";
 import { formatINR } from "@/lib/trades/calculations";
 import { formatPercent, formatRatio, formatRMultiple } from "@/lib/analytics/format";
 import type { TimeRangeKey } from "@/types/analytics";
-import { TradeCard } from "@/components/trades/trade-card";
 import { TradeDetailModal } from "@/components/trades/trade-detail-modal";
 import { TimeRangeSelector } from "./time-range-selector";
 import { MetricCard } from "./metric-card";
@@ -48,11 +55,17 @@ interface Props {
 
 export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
   const [range, setRange] = useState<TimeRangeKey>("1M");
+  const [asset, setAsset] = useState<AssetFilter>("all");
+  const [side, setSide] = useState<SideFilter>("all");
   const capital = useCapitalState();
   const baseCapital = baseCapitalProp ?? capital.baseCapital;
-  const analytics = usePortfolioAnalytics({ range, baseCapital });
-  const { data: rawTrades } = useTradesQuery();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const analytics = usePortfolioAnalytics({
+    range,
+    baseCapital,
+    assetFilter: asset,
+    sideFilter: side,
+  });
+  const [activeId] = useState<string | null>(null);
 
   const { summary, equityCurve, drawdownSeries, drawdown, emotional, discipline, tags, filteredTrades } =
     analytics;
@@ -72,19 +85,6 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
   const capitalReturn = useMemo(
     () => computeCapitalAdjustedReturn(adjustedCurve),
     [adjustedCurve],
-  );
-
-  const recent = useMemo(
-    () =>
-      (rawTrades ?? [])
-        .slice()
-        .sort(
-          (a, b) =>
-            new Date(b.trade.entry_date).getTime() -
-            new Date(a.trade.entry_date).getTime(),
-        )
-        .slice(0, 5),
-    [rawTrades],
   );
 
   if (analytics.isLoading) return <AnalyticsSkeleton />;
@@ -107,10 +107,33 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
       <FirstCapitalPrompt />
       {/* Sticky filter bar (mobile-friendly) */}
       <div className="sticky top-0 z-10 -mx-4 md:-mx-8 px-4 md:px-8 py-2 bg-background/85 backdrop-blur border-b border-border/60">
-        <div className="flex items-center justify-between gap-3">
-          <TimeRangeSelector value={range} onChange={setRange} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <TimeRangeSelector value={range} onChange={setRange} />
+            <Select value={asset} onValueChange={(v) => setAsset(v as AssetFilter)}>
+              <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All assets</SelectItem>
+                <SelectItem value="equity">Equity</SelectItem>
+                <SelectItem value="futures">Futures</SelectItem>
+                <SelectItem value="options">Options</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={side} onValueChange={(v) => setSide(v as SideFilter)}>
+              <SelectTrigger className="h-8 w-28 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Both sides</SelectItem>
+                <SelectItem value="long">Long</SelectItem>
+                <SelectItem value="short">Short</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <span className="hidden md:inline text-[11px] text-muted-foreground tabular-nums">
-            {filteredTrades.length} trade{filteredTrades.length === 1 ? "" : "s"} in range
+            {filteredTrades.length} trade{filteredTrades.length === 1 ? "" : "s"} in view
           </span>
         </div>
       </div>
@@ -118,7 +141,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
       {/* Summary metrics */}
       <AnalyticsSection
         title="Overview"
-        description="Headline performance for the selected range."
+        description="Headline performance for the selected filters."
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <MetricCard
@@ -280,42 +303,9 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
         <TagAnalyticsTable data={tags} />
       </AnalyticsSection>
 
-      {/* Recent trades */}
-      <AnalyticsSection
-        title="Recent trades"
-        description="Your latest entries, ready to revisit."
-        action={
-          <Button asChild size="sm" variant="ghost">
-            <Link to="/trades">
-              <History className="h-3.5 w-3.5 mr-1.5" /> View all
-            </Link>
-          </Button>
-        }
-      >
-        {recent.length === 0 ? (
-          <AnalyticsEmptyState
-            icon={History}
-            title="No trades yet"
-            description="Log your first trade to start building your record."
-          />
-        ) : (
-          <div className="grid md:grid-cols-2 gap-3">
-            {recent.map((t) => (
-              <TradeCard
-                key={t.trade.id}
-                trade={t.trade}
-                exits={t.exits}
-                discipline={t.discipline}
-                onClick={() => setActiveId(t.trade.id)}
-              />
-            ))}
-          </div>
-        )}
-      </AnalyticsSection>
-
       {!hasRangeData && (
         <p className="text-xs text-muted-foreground text-center">
-          No trades in the selected range — try a wider window above.{" "}
+          No trades match these filters — try widening the window or clearing asset/side.{" "}
           <Link to="/add-trade" className="text-primary hover:underline">
             <PlusCircle className="h-3 w-3 inline -mt-0.5 mr-0.5" /> Add trade
           </Link>
@@ -324,7 +314,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
 
       <MethodologyNote items={DEFAULT_METHODOLOGY} />
 
-      <TradeDetailModal tradeId={activeId} onClose={() => setActiveId(null)} />
+      <TradeDetailModal tradeId={activeId} onClose={() => undefined} />
     </div>
   );
 }
