@@ -12,10 +12,7 @@ import {
 import { format } from "date-fns";
 import { BENCHMARK_INDICES, useIndexSeries } from "@/lib/market/api";
 import { buildEquityCurve } from "@/lib/analytics/equity-curve";
-import {
-  buildBenchmarkComparison,
-  type PnlPoint,
-} from "@/lib/portfolio/benchmark";
+import { buildBenchmarkComparison, type PnlPoint } from "@/lib/portfolio/benchmark";
 import type { NormalizedTrade } from "@/types/analytics";
 import { cn } from "@/lib/utils";
 
@@ -219,9 +216,7 @@ export function BenchmarkSection({ trades, capitalBase }: Props) {
                     }}
                     labelFormatter={(v) => format(new Date(v as number), "dd MMM yyyy")}
                     formatter={(value, name) => [
-                      value == null || typeof value !== "number"
-                        ? "—"
-                        : `${value.toFixed(2)}%`,
+                      value == null || typeof value !== "number" ? "—" : `${value.toFixed(2)}%`,
                       name === "portfolio" ? "Portfolio" : indexName,
                     ]}
                   />

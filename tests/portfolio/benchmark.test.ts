@@ -34,11 +34,7 @@ describe("buildBenchmarkComparison", () => {
       ],
       capitalBase: 100000,
     });
-    expect(r.series.map((p) => p.date)).toEqual([
-      "2025-01-01",
-      "2025-01-02",
-      "2025-01-03",
-    ]);
+    expect(r.series.map((p) => p.date)).toEqual(["2025-01-01", "2025-01-02", "2025-01-03"]);
     // 01-02: pnl still 0, close = 105
     expect(r.series[1].portfolioPct).toBeCloseTo(0, 10);
     expect(r.series[1].benchmarkPct).toBeCloseTo(0.05, 10);
