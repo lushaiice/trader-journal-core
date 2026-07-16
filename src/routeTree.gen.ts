@@ -16,6 +16,7 @@ import { Route as AppWeeklyReviewRouteImport } from './routes/_app.weekly-review
 import { Route as AppTradesRouteImport } from './routes/_app.trades'
 import { Route as AppTodayRouteImport } from './routes/_app.today'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppPortfolioRouteImport } from './routes/_app.portfolio'
 import { Route as AppJournalTimelineRouteImport } from './routes/_app.journal-timeline'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCapitalRouteImport } from './routes/_app.capital'
@@ -56,6 +57,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPortfolioRoute = AppPortfolioRouteImport.update({
+  id: '/portfolio',
+  path: '/portfolio',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppJournalTimelineRoute = AppJournalTimelineRouteImport.update({
   id: '/journal-timeline',
   path: '/journal-timeline',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
   '/journal-timeline': typeof AppJournalTimelineRoute
+  '/portfolio': typeof AppPortfolioRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
   '/trades': typeof AppTradesRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/capital': typeof AppCapitalRoute
   '/dashboard': typeof AppDashboardRoute
   '/journal-timeline': typeof AppJournalTimelineRoute
+  '/portfolio': typeof AppPortfolioRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
   '/trades': typeof AppTradesRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/_app/capital': typeof AppCapitalRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/journal-timeline': typeof AppJournalTimelineRoute
+  '/_app/portfolio': typeof AppPortfolioRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/today': typeof AppTodayRoute
   '/_app/trades': typeof AppTradesRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/capital'
     | '/dashboard'
     | '/journal-timeline'
+    | '/portfolio'
     | '/settings'
     | '/today'
     | '/trades'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/capital'
     | '/dashboard'
     | '/journal-timeline'
+    | '/portfolio'
     | '/settings'
     | '/today'
     | '/trades'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/_app/capital'
     | '/_app/dashboard'
     | '/_app/journal-timeline'
+    | '/_app/portfolio'
     | '/_app/settings'
     | '/_app/today'
     | '/_app/trades'
@@ -223,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/portfolio': {
+      id: '/_app/portfolio'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof AppPortfolioRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/journal-timeline': {
       id: '/_app/journal-timeline'
       path: '/journal-timeline'
@@ -267,6 +286,7 @@ interface AppRouteChildren {
   AppCapitalRoute: typeof AppCapitalRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppJournalTimelineRoute: typeof AppJournalTimelineRoute
+  AppPortfolioRoute: typeof AppPortfolioRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTodayRoute: typeof AppTodayRoute
   AppTradesRoute: typeof AppTradesRoute
@@ -279,6 +299,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCapitalRoute: AppCapitalRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppJournalTimelineRoute: AppJournalTimelineRoute,
+  AppPortfolioRoute: AppPortfolioRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTodayRoute: AppTodayRoute,
   AppTradesRoute: AppTradesRoute,

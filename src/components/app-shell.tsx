@@ -5,7 +5,7 @@ import {
   PlusCircle,
   History,
   BarChart3,
-  
+  PieChart,
   Settings,
   LogOut,
   TrendingUp,
