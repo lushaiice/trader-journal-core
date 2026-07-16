@@ -150,6 +150,7 @@ export function BenchmarkSection({ trades, capitalBase, inceptionDate }: Props) 
           <p className="text-xs text-muted-foreground">
             Portfolio line is total return — realized + unrealized (mark-to-market) — on capital.
             Benchmark uses EOD closes (Yahoo Finance).
+            {historyQuery.isLoading ? " Loading market history…" : ""}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

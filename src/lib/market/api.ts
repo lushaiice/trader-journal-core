@@ -88,20 +88,48 @@ export function useSymbolPriceHistory(symbols: string[], fromDate?: string) {
     queryKey: ["market", "price-history", key, fromDate ?? null],
     enabled: !!user && symbols.length > 0,
     queryFn: async (): Promise<Record<string, SymbolPricePoint[]>> => {
-      let q = supabase
-        .from("market_prices")
-        .select("symbol, price_date, close")
-        .in("symbol", symbols)
-        .order("price_date", { ascending: true });
-      if (fromDate) q = q.gte("price_date", fromDate);
-      const { data, error } = await q;
-      if (error) throw error;
+      const PAGE = 1000;
+      const SYMBOL_CHUNK = 50;
+      const MAX_ROWS = 200_000;
       const map: Record<string, SymbolPricePoint[]> = {};
-      for (const r of data ?? []) {
-        (map[r.symbol] ??= []).push({
-          price_date: r.price_date,
-          close: Number(r.close),
-        });
+      let total = 0;
+
+      for (let i = 0; i < symbols.length; i += SYMBOL_CHUNK) {
+        const chunk = symbols.slice(i, i + SYMBOL_CHUNK);
+        let offset = 0;
+        // Paginate through all rows for this symbol chunk
+        // Supabase caps a single response at ~1000 rows by default.
+        while (total < MAX_ROWS) {
+          let q = supabase
+            .from("market_prices")
+            .select("symbol, price_date, close")
+            .in("symbol", chunk)
+            .order("price_date", { ascending: true })
+            .range(offset, offset + PAGE - 1);
+          if (fromDate) q = q.gte("price_date", fromDate);
+          const { data, error } = await q;
+          if (error) throw error;
+          const rows = data ?? [];
+          for (const r of rows) {
+            (map[r.symbol] ??= []).push({
+              price_date: r.price_date,
+              close: Number(r.close),
+            });
+            total += 1;
+            if (total >= MAX_ROWS) break;
+          }
+          if (rows.length < PAGE) break;
+          offset += PAGE;
+        }
+        if (total >= MAX_ROWS) break;
+      }
+
+      // Rows come back ordered by price_date within each page, but merging
+      // pages across a chunk keeps them ascending per symbol already because
+      // we page by (order price_date asc, filter symbol in chunk). Guard
+      // anyway in case of ties across pages.
+      for (const sym of Object.keys(map)) {
+        map[sym].sort((a, b) => a.price_date.localeCompare(b.price_date));
       }
       return map;
     },
