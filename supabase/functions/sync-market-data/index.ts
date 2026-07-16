@@ -127,19 +127,7 @@ Deno.serve(async (req: Request) => {
 
     let symbols: Array<{ symbol: string; isin: string | null }>;
     if (requestedSymbols && requestedSymbols.length > 0) {
-      // On-demand refresh: look up isin for provided symbols where possible.
-      const { data } = await supabase
-        .from("trades")
-        .select("symbol, isin")
-        .in("symbol", requestedSymbols);
-      const isinBySymbol = new Map<string, string | null>();
-      for (const row of data ?? []) {
-        if (!isinBySymbol.has(row.symbol)) isinBySymbol.set(row.symbol, row.isin ?? null);
-      }
-      symbols = requestedSymbols.map((s) => ({
-        symbol: s,
-        isin: isinBySymbol.get(s) ?? null,
-      }));
+      symbols = requestedSymbols.map((s) => ({ symbol: s, isin: null }));
     } else {
       symbols = await getHeldSymbols(supabase);
     }
