@@ -95,9 +95,9 @@ describe("buildDailyTotalPnl", () => {
     const d2 = series.find((p) => p.date === "2025-01-02")!;
     expect(d1.unrealized).toBe(0);
     expect(d1.realizedCum).toBe(0);
-    expect(d2.unrealized).toBe(2000);
+    expect(d2.unrealized).toBeCloseTo(2000, 6);
     expect(d2.realizedCum).toBe(0);
-    expect(d2.totalPnl).toBe(2000);
+    expect(d2.totalPnl).toBeCloseTo(2000, 6);
   });
 
   it("partial exit: realized locks in, unrealized tracks remaining qty", () => {
@@ -121,10 +121,10 @@ describe("buildDailyTotalPnl", () => {
     const d2 = series.find((p) => p.date === "2025-01-02")!;
     const d3 = series.find((p) => p.date === "2025-01-03")!;
     expect(d2.realizedCum).toBe(2000); // 40 * (150 - 100)
-    expect(d2.unrealized).toBe(3000); // 60 * (150 - 100)
+    expect(d2.unrealized).toBeCloseTo(3000, 6); // 60 * (150 - 100)
     expect(d3.realizedCum).toBe(2000);
-    expect(d3.unrealized).toBe(3600); // 60 * (160 - 100)
-    expect(d3.totalPnl).toBe(5600);
+    expect(d3.unrealized).toBeCloseTo(3600, 6); // 60 * (160 - 100)
+    expect(d3.totalPnl).toBeCloseTo(5600, 6);
   });
 
   it("forward-fills closes on days with no price point", () => {
@@ -154,7 +154,7 @@ describe("buildDailyTotalPnl", () => {
     const d3 = series.find((p) => p.date === "2025-01-03");
     expect(d3).toBeDefined();
     // On D3 CCC has no new price → forward-filled 110 → unrealized = 10 * 10 = 100
-    expect(d3!.unrealized).toBe(100);
+    expect(d3!.unrealized).toBeCloseTo(100, 6);
   });
 
   it("fully closed trade contributes only realized (no unrealized after close)", () => {
@@ -179,5 +179,53 @@ describe("buildDailyTotalPnl", () => {
     expect(d3.unrealized).toBe(0);
     expect(d3.realizedCum).toBe(1500);
     expect(d3.totalPnl).toBe(1500);
+  });
+
+  it("split-adjusted history: anchors to entry-date close, tracks % move", () => {
+    // Entry basis (as-traded) ₹15,050; Yahoo history is split-adjusted to ~₹2,506.
+    // Old buggy formula: (2600 - 15050) * 2 ≈ -24,900 phantom loss.
+    // Correct: 15050 * 2 * (2600/2506 - 1) ≈ +1128.9.
+    const t = makeTrade({
+      symbol: "ZFCVINDIA",
+      entryDate: "2025-01-01",
+      entryPrice: 15050,
+      quantity: 2,
+    });
+    const series = buildDailyTotalPnl({
+      trades: [t],
+      priceHistoryBySymbol: {
+        ZFCVINDIA: h([
+          ["2025-01-01", 2506],
+          ["2025-01-02", 2600],
+        ]),
+      },
+    });
+    const d1 = series.find((p) => p.date === "2025-01-01")!;
+    const d2 = series.find((p) => p.date === "2025-01-02")!;
+    expect(d1.unrealized).toBe(0);
+    const expected = 15050 * 2 * (2600 / 2506 - 1);
+    expect(d2.unrealized).toBeCloseTo(expected, 0);
+    expect(Math.abs(d2.unrealized - 1128.9)).toBeLessThan(2);
+  });
+
+  it("entry predates all price history → contributes 0 unrealized (no anchor)", () => {
+    const t = makeTrade({
+      symbol: "FFF",
+      entryDate: "2024-12-01",
+      entryPrice: 100,
+      quantity: 10,
+    });
+    const series = buildDailyTotalPnl({
+      trades: [t],
+      priceHistoryBySymbol: {
+        FFF: h([
+          ["2025-01-01", 150],
+          ["2025-01-02", 160],
+        ]),
+      },
+    });
+    for (const p of series) {
+      expect(p.unrealized).toBe(0);
+    }
   });
 });

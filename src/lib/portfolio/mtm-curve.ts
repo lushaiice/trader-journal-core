@@ -2,6 +2,11 @@
  * Daily total-P&L curve = realized (from exits) + unrealized (mark-to-market
  * of remaining open quantity, using forward-filled daily closes).
  *
+ * Note: unrealized is an estimate — it anchors each position to its entry-date
+ * market close and tracks the % move from there (split-invariant). Scale-ins
+ * are approximated by the first-entry anchor; exact daily MTM would need the
+ * dated fills, which the CSV import collapses into an average-cost position.
+ *
  * Pure & framework-free. See tests/portfolio/mtm-curve.test.ts.
  */
 import type { NormalizedTrade } from "@/types/analytics";
@@ -73,6 +78,20 @@ export function buildDailyTotalPnl({
     priceMap.set(sym, sorted);
   }
 
+  // Anchor each position to its entry-date close (last close on/before entryIso).
+  // Missing anchor (entry predates history) → no valuation, contributes 0.
+  const anchorClose = new Map<TradeCtx, number>();
+  for (const c of ctxs) {
+    const series = priceMap.get(c.trade.symbol);
+    if (!series) continue;
+    let anchor: number | null = null;
+    for (const p of series) {
+      if (p.price_date <= c.entryIso) anchor = p.close;
+      else break;
+    }
+    if (anchor != null && anchor > 0) anchorClose.set(c, anchor);
+  }
+
   const dateSet = new Set<string>();
   for (const c of ctxs) {
     if (inWindow(c.entryIso)) dateSet.add(c.entryIso);
@@ -119,7 +138,9 @@ export function buildDailyTotalPnl({
       if (remaining <= 0) continue;
       const close = lastClose.get(c.trade.symbol);
       if (close == null) continue;
-      unrealized += (close - c.trade.entryPrice) * remaining * c.sideSign;
+      const anchor = anchorClose.get(c);
+      if (anchor == null) continue;
+      unrealized += c.trade.entryPrice * remaining * c.sideSign * (close / anchor - 1);
     }
 
     result.push({ date, realizedCum: realized, unrealized, totalPnl: realized + unrealized });
