@@ -2,6 +2,11 @@
  * Daily total-P&L curve = realized (from exits) + unrealized (mark-to-market
  * of remaining open quantity, using forward-filled daily closes).
  *
+ * Note: unrealized is an estimate — it anchors each position to its entry-date
+ * market close and tracks the % move from there (split-invariant). Scale-ins
+ * are approximated by the first-entry anchor; exact daily MTM would need the
+ * dated fills, which the CSV import collapses into an average-cost position.
+ *
  * Pure & framework-free. See tests/portfolio/mtm-curve.test.ts.
  */
 import type { NormalizedTrade } from "@/types/analytics";
