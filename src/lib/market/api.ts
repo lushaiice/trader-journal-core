@@ -72,6 +72,42 @@ export function useIndexSeries(indexCode: string, fromDate?: string) {
   });
 }
 
+export interface SymbolPricePoint {
+  price_date: string;
+  close: number;
+}
+
+/**
+ * Daily close history per requested symbol from market_prices, within an
+ * optional lower-bound window. Returns symbol -> ascending price series.
+ */
+export function useSymbolPriceHistory(symbols: string[], fromDate?: string) {
+  const { user } = useAuth();
+  const key = [...symbols].map((s) => s.toUpperCase()).sort();
+  return useQuery({
+    queryKey: ["market", "price-history", key, fromDate ?? null],
+    enabled: !!user && symbols.length > 0,
+    queryFn: async (): Promise<Record<string, SymbolPricePoint[]>> => {
+      let q = supabase
+        .from("market_prices")
+        .select("symbol, price_date, close")
+        .in("symbol", symbols)
+        .order("price_date", { ascending: true });
+      if (fromDate) q = q.gte("price_date", fromDate);
+      const { data, error } = await q;
+      if (error) throw error;
+      const map: Record<string, SymbolPricePoint[]> = {};
+      for (const r of data ?? []) {
+        (map[r.symbol] ??= []).push({
+          price_date: r.price_date,
+          close: Number(r.close),
+        });
+      }
+      return map;
+    },
+  });
+}
+
 export interface MarketFreshness {
   fetchedAt: string | null;
   source: string | null;
