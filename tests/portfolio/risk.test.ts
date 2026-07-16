@@ -105,7 +105,7 @@ describe("computeConcentration", () => {
     expect(c.weights.map((w) => w.weight)).toEqual([0.6, 0.3, 0.1]);
     expect(c.herfindahl).toBeCloseTo(0.46, 6);
     expect(c.topWeight).toBe(0.6);
-    expect(c.top3Weight).toBe(1);
+    expect(c.top3Weight).toBeCloseTo(1, 6);
   });
 
   it("returns nulls when no priced holdings", () => {
