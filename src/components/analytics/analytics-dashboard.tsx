@@ -314,7 +314,7 @@ export function AnalyticsDashboard({ baseCapital: baseCapitalProp }: Props) {
 
       <MethodologyNote items={DEFAULT_METHODOLOGY} />
 
-      <TradeDetailModal tradeId={activeId} onClose={() => undefined} />
+      
     </div>
   );
 }
