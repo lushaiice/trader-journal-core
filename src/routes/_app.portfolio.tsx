@@ -94,6 +94,18 @@ function PortfolioPage() {
     [openTrades, priceBySymbol],
   );
 
+  const capital = useCapitalState();
+
+  const risk = useMemo(() => computeReturnRisk(normalized), [normalized]);
+  const concentration = useMemo(
+    () => computeConcentration(result.holdings),
+    [result.holdings],
+  );
+  const allocation = useMemo(
+    () => computeAllocation(openTrades, priceBySymbol, capital.baseCapital),
+    [openTrades, priceBySymbol, capital.baseCapital],
+  );
+
   const handleRefresh = async () => {
     if (refreshing || symbols.length === 0) return;
     setRefreshing(true);
