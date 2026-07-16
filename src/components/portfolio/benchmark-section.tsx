@@ -10,9 +10,9 @@ import {
   YAxis,
 } from "recharts";
 import { format } from "date-fns";
-import { BENCHMARK_INDICES, useIndexSeries } from "@/lib/market/api";
-import { buildEquityCurve } from "@/lib/analytics/equity-curve";
+import { BENCHMARK_INDICES, useIndexSeries, useSymbolPriceHistory } from "@/lib/market/api";
 import { buildBenchmarkComparison, type PnlPoint } from "@/lib/portfolio/benchmark";
+import { buildDailyTotalPnl } from "@/lib/portfolio/mtm-curve";
 import type { NormalizedTrade } from "@/types/analytics";
 import { cn } from "@/lib/utils";
 
