@@ -47,11 +47,20 @@ interface Props {
   capitalBase: number;
   /** ISO 'YYYY-MM-DD' of first capital event, or null if none. */
   inceptionDate: string | null;
+  /** Initial range key; defaults to "ALL". */
+  defaultRange?: RangeKey;
 }
 
-export function BenchmarkSection({ trades, capitalBase, inceptionDate }: Props) {
+export function BenchmarkSection({
+  trades,
+  capitalBase,
+  inceptionDate,
+  defaultRange = "ALL",
+}: Props) {
   const [indexCode, setIndexCode] = useState<string>("NIFTY50");
-  const [range, setRange] = useState<RangeKey>("ALL");
+  const [range, setRange] = useState<RangeKey>(
+    defaultRange === "INCEPTION" && !inceptionDate ? "ALL" : defaultRange,
+  );
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
 

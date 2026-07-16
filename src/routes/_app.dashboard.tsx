@@ -25,7 +25,9 @@ import { MetricCard } from "@/components/analytics/metric-card";
 import { AnalyticsSection } from "@/components/analytics/analytics-section";
 import { AnalyticsEmptyState } from "@/components/analytics/analytics-empty-state";
 import { ProcessQualityCard, StreakCard } from "@/components/workspace";
+import { BenchmarkSection } from "@/components/portfolio/benchmark-section";
 import { useTradesQuery } from "@/lib/trades/api";
+import { normalizeTrades } from "@/lib/analytics/normalize";
 import { useCapitalState } from "@/hooks/capital";
 import { usePortfolioAnalytics } from "@/hooks/analytics";
 import { useTodayPulse } from "@/hooks/use-today-pulse";
@@ -59,6 +61,18 @@ function Dashboard() {
   const hasReflection = (trades.data ?? []).some((t) =>
     Boolean(t.trade.review_notes || t.trade.lessons_learned),
   );
+
+  const normalized = useMemo(
+    () => (trades.data ? normalizeTrades(trades.data) : []),
+    [trades.data],
+  );
+
+  const inceptionDate = useMemo<string | null>(() => {
+    if (!capital.events.length) return null;
+    let earliest = capital.events[0].eventDate;
+    for (const e of capital.events) if (e.eventDate < earliest) earliest = e.eventDate;
+    return earliest;
+  }, [capital.events]);
 
   const recent = useMemo(
     () =>
@@ -189,6 +203,21 @@ function Dashboard() {
             )}
           </AnalyticsSection>
         </SectionErrorBoundary>
+
+        {/* Benchmark comparison */}
+        {hasTrades && capital.baseCapital > 0 && (
+          <SectionErrorBoundary
+            title="Benchmark comparison is temporarily unavailable."
+            description="Try again in a moment."
+          >
+            <BenchmarkSection
+              trades={normalized}
+              capitalBase={capital.baseCapital}
+              inceptionDate={inceptionDate}
+              defaultRange="INCEPTION"
+            />
+          </SectionErrorBoundary>
+        )}
 
         {/* Recent trades */}
         <AnalyticsSection

@@ -23,8 +23,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/today", label: "Today", icon: Sun },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/today", label: "Today", icon: Sun },
   { to: "/add-trade", label: "Add Trade", icon: PlusCircle },
   { to: "/trades", label: "Trades", icon: History },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
