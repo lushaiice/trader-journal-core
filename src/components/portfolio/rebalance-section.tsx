@@ -325,9 +325,6 @@ function RemovedArea({
     </div>
   );
 }
-    </section>
-  );
-}
 
 function ActionBadge({ action }: { action: RebalanceAction }) {
   const styles =
