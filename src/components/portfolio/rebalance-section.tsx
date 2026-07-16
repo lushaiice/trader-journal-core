@@ -69,16 +69,16 @@ export function RebalanceSection({ holdings }: Props) {
   }, [pricedSig]);
 
   const includedSig = included.map((h) => h.symbol).join("|");
+  // Re-baseline: whenever the user structurally changes the included set
+  // (removes or adds back a holding), reset ALL included targets to the
+  // fresh current weights computed over the included subset. This keeps
+  // Current % and Target % aligned (no phantom deltas) until the user edits.
+  // Manual edits persist while the included set is unchanged.
   useEffect(() => {
-    setTargets((prev) => {
-      const fresh = currentWeights(included);
-      const next: Record<string, string> = {};
-      for (const h of included) {
-        next[h.symbol] =
-          prev[h.symbol] !== undefined ? prev[h.symbol] : (fresh[h.symbol] ?? 0).toFixed(2);
-      }
-      return next;
-    });
+    const fresh = currentWeights(included);
+    setTargets(
+      Object.fromEntries(included.map((h) => [h.symbol, (fresh[h.symbol] ?? 0).toFixed(2)])),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [includedSig]);
 
