@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,17 +33,62 @@ export function RebalanceSection({ holdings }: Props) {
     [holdings],
   );
 
-  const defaults = useMemo(() => currentWeights(priced), [priced]);
-  const [targets, setTargets] = useState<Record<string, string>>(() =>
-    Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, v.toFixed(2)])),
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+
+  // Drop excluded symbols that no longer exist in the priced set
+  const pricedSig = priced.map((h) => h.symbol).join("|");
+  useEffect(() => {
+    setExcluded((prev) => {
+      const present = new Set(priced.map((h) => h.symbol));
+      let changed = false;
+      const next = new Set<string>();
+      for (const s of prev) {
+        if (present.has(s)) next.add(s);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pricedSig]);
+
+  const included = useMemo(
+    () => priced.filter((h) => !excluded.has(h.symbol)),
+    [priced, excluded],
+  );
+  const removed = useMemo(
+    () => priced.filter((h) => excluded.has(h.symbol)),
+    [priced, excluded],
   );
 
-  // Reset when holdings identity changes (new priced set)
-  const sig = priced.map((h) => h.symbol).join("|");
+  const includedDefaults = useMemo(() => currentWeights(included), [included]);
+  const [targets, setTargets] = useState<Record<string, string>>({});
+
+  // On first mount and whenever the priced identity changes, seed all targets
+  // from current weights. Later, when the included subset changes, keep the
+  // user's already-entered targets for symbols that remain and just seed newly
+  // included ones from the fresh (subset-relative) current weights.
   useEffect(() => {
-    setTargets(Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, v.toFixed(2)])));
+    setTargets(
+      Object.fromEntries(
+        Object.entries(currentWeights(priced)).map(([k, v]) => [k, v.toFixed(2)]),
+      ),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig]);
+  }, [pricedSig]);
+
+  const includedSig = included.map((h) => h.symbol).join("|");
+  useEffect(() => {
+    setTargets((prev) => {
+      const fresh = currentWeights(included);
+      const next: Record<string, string> = {};
+      for (const h of included) {
+        next[h.symbol] =
+          prev[h.symbol] !== undefined ? prev[h.symbol] : (fresh[h.symbol] ?? 0).toFixed(2);
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includedSig]);
 
   const numericTargets = useMemo(() => {
     const out: Record<string, number> = {};
@@ -56,19 +101,40 @@ export function RebalanceSection({ holdings }: Props) {
 
   const input = useMemo(
     () =>
-      priced.map((h) => ({
+      included.map((h) => ({
         symbol: h.symbol,
         marketValue: h.marketValue ?? 0,
         lastClose: h.lastClose,
       })),
-    [priced],
+    [included],
   );
 
   const result = useMemo(() => computeRebalance(input, numericTargets), [input, numericTargets]);
 
   const resetToCurrent = () => {
-    setTargets(Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, v.toFixed(2)])));
+    setTargets(
+      Object.fromEntries(
+        Object.entries(includedDefaults).map(([k, v]) => [k, v.toFixed(2)]),
+      ),
+    );
   };
+
+  const removeSymbol = (symbol: string) => {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      next.add(symbol);
+      return next;
+    });
+  };
+
+  const addBackSymbol = (symbol: string) => {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      next.delete(symbol);
+      return next;
+    });
+  };
+
 
   return (
     <section className="mb-8">
