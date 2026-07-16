@@ -38,6 +38,8 @@ export interface BuildBenchmarkArgs {
   indexSeries: IndexClose[];
   capitalBase: number;
   fromDate?: string | null;
+  /** Inclusive upper bound (ISO 'YYYY-MM-DD'). null/undefined = open-ended. */
+  toDate?: string | null;
 }
 
 const EMPTY: BenchmarkComparison = {
