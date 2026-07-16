@@ -53,7 +53,7 @@ async function syncSymbols(
   for (const { symbol, isin } of symbols) {
     const ticker = symbolToYahooTicker(symbol);
     try {
-      const series = await provider.getDailyCloses([ticker], "5d");
+      const series = await provider.getDailyCloses([ticker], "2y");
       const points = series[ticker] ?? [];
       if (!points.length) continue;
       const rows = points.map((p) => ({
@@ -81,12 +81,12 @@ async function getHeldSymbols(
 ): Promise<Array<{ symbol: string; isin: string | null }>> {
   const { data, error } = await supabase
     .from("trades")
-    .select("symbol")
-    .in("status", ["open", "partial"]);
+    .select("symbol, instrument_type");
   if (error) throw error;
   const seen = new Set<string>();
   for (const row of data ?? []) {
-    if (row.symbol) seen.add(row.symbol);
+    const it = String(row.instrument_type ?? "equity");
+    if (row.symbol && it === "equity") seen.add(row.symbol);
   }
   return Array.from(seen).map((symbol) => ({ symbol, isin: null }));
 }

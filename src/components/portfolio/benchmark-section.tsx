@@ -10,9 +10,9 @@ import {
   YAxis,
 } from "recharts";
 import { format } from "date-fns";
-import { BENCHMARK_INDICES, useIndexSeries } from "@/lib/market/api";
-import { buildEquityCurve } from "@/lib/analytics/equity-curve";
+import { BENCHMARK_INDICES, useIndexSeries, useSymbolPriceHistory } from "@/lib/market/api";
 import { buildBenchmarkComparison, type PnlPoint } from "@/lib/portfolio/benchmark";
+import { buildDailyTotalPnl } from "@/lib/portfolio/mtm-curve";
 import type { NormalizedTrade } from "@/types/analytics";
 import { cn } from "@/lib/utils";
 
@@ -84,13 +84,25 @@ export function BenchmarkSection({ trades, capitalBase, inceptionDate }: Props) 
 
   const indexQuery = useIndexSeries(indexCode, fromDate ?? undefined);
 
-  const pnlByDate = useMemo<PnlPoint[]>(() => {
-    const curve = buildEquityCurve(trades);
-    return curve.map((p) => ({
-      date: toIsoDate(p.date),
-      cumulativePnl: p.cumulativePnl,
-    }));
+  const equitySymbols = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of trades) {
+      if (String(t.raw.trade.instrument_type ?? "equity") === "equity") s.add(t.symbol);
+    }
+    return Array.from(s);
   }, [trades]);
+
+  const historyQuery = useSymbolPriceHistory(equitySymbols, fromDate ?? undefined);
+
+  const pnlByDate = useMemo<PnlPoint[]>(() => {
+    const series = buildDailyTotalPnl({
+      trades,
+      priceHistoryBySymbol: historyQuery.data ?? {},
+      fromDate,
+      toDate,
+    });
+    return series.map((p) => ({ date: p.date, cumulativePnl: p.totalPnl }));
+  }, [trades, historyQuery.data, fromDate, toDate]);
 
   const comparison = useMemo(
     () =>
@@ -136,7 +148,8 @@ export function BenchmarkSection({ trades, capitalBase, inceptionDate }: Props) 
         <div>
           <h2 className="eyebrow mb-1">Benchmark</h2>
           <p className="text-xs text-muted-foreground">
-            Cumulative trading return vs a market index, normalized from the window start.
+            Portfolio line is total return — realized + unrealized (mark-to-market) — on capital.
+            Benchmark uses EOD closes (Yahoo Finance).
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
