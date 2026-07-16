@@ -45,12 +45,42 @@ function fmtPct(v: number | null | undefined): string {
 interface Props {
   trades: NormalizedTrade[];
   capitalBase: number;
+  /** ISO 'YYYY-MM-DD' of first capital event, or null if none. */
+  inceptionDate: string | null;
 }
 
-export function BenchmarkSection({ trades, capitalBase }: Props) {
+export function BenchmarkSection({ trades, capitalBase, inceptionDate }: Props) {
   const [indexCode, setIndexCode] = useState<string>("NIFTY50");
   const [range, setRange] = useState<RangeKey>("ALL");
-  const fromDate = windowStart(range);
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
+
+  const ranges = useMemo<RangeDef[]>(() => {
+    const base: RangeDef[] = [
+      { key: "1M", label: "1M" },
+      { key: "3M", label: "3M" },
+      { key: "1Y", label: "1Y" },
+    ];
+    if (inceptionDate) base.push({ key: "INCEPTION", label: "Since inception" });
+    base.push({ key: "ALL", label: "All" });
+    base.push({ key: "CUSTOM", label: "Custom" });
+    return base;
+  }, [inceptionDate]);
+
+  // If user is on INCEPTION but inceptionDate disappears, fall back to ALL
+  useEffect(() => {
+    if (range === "INCEPTION" && !inceptionDate) setRange("ALL");
+  }, [range, inceptionDate]);
+
+  const fromDate: string | null =
+    range === "ALL"
+      ? null
+      : range === "INCEPTION"
+        ? inceptionDate
+        : range === "CUSTOM"
+          ? customFrom || null
+          : relativeStart(range);
+  const toDate: string | null = range === "CUSTOM" ? customTo || null : null;
 
   const indexQuery = useIndexSeries(indexCode, fromDate ?? undefined);
 
@@ -69,8 +99,9 @@ export function BenchmarkSection({ trades, capitalBase }: Props) {
         indexSeries: indexQuery.data ?? [],
         capitalBase,
         fromDate,
+        toDate,
       }),
-    [pnlByDate, indexQuery.data, capitalBase, fromDate],
+    [pnlByDate, indexQuery.data, capitalBase, fromDate, toDate],
   );
 
   const indexMeta = BENCHMARK_INDICES.find((i) => i.code === indexCode);
@@ -108,7 +139,7 @@ export function BenchmarkSection({ trades, capitalBase }: Props) {
             Cumulative trading return vs a market index, normalized from the window start.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={indexCode}
             onChange={(e) => setIndexCode(e.target.value)}
@@ -125,7 +156,7 @@ export function BenchmarkSection({ trades, capitalBase }: Props) {
             role="tablist"
             className="inline-flex items-center gap-1 rounded-lg border border-border bg-card/50 p-1"
           >
-            {RANGES.map((r) => {
+            {ranges.map((r) => {
               const active = r.key === range;
               return (
                 <button
@@ -146,8 +177,35 @@ export function BenchmarkSection({ trades, capitalBase }: Props) {
               );
             })}
           </div>
+          {range === "CUSTOM" && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <label className="flex items-center gap-1">
+                From
+                <input
+                  type="date"
+                  value={customFrom}
+                  max={customTo || undefined}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="rounded-md border border-border bg-card/50 px-1.5 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  aria-label="Custom range start date"
+                />
+              </label>
+              <label className="flex items-center gap-1">
+                To
+                <input
+                  type="date"
+                  value={customTo}
+                  min={customFrom || undefined}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="rounded-md border border-border bg-card/50 px-1.5 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  aria-label="Custom range end date"
+                />
+              </label>
+            </div>
+          )}
         </div>
       </div>
+
 
       <div className="surface-card p-4 md:p-5">
         {noCapital ? (
