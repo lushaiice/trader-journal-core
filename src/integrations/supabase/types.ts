@@ -374,6 +374,69 @@ export type Database = {
           },
         ]
       }
+      index_history: {
+        Row: {
+          close: number
+          fetched_at: string
+          id: string
+          index_code: string
+          price_date: string
+          source: string
+          yahoo_ticker: string
+        }
+        Insert: {
+          close: number
+          fetched_at?: string
+          id?: string
+          index_code: string
+          price_date: string
+          source?: string
+          yahoo_ticker: string
+        }
+        Update: {
+          close?: number
+          fetched_at?: string
+          id?: string
+          index_code?: string
+          price_date?: string
+          source?: string
+          yahoo_ticker?: string
+        }
+        Relationships: []
+      }
+      market_prices: {
+        Row: {
+          close: number
+          fetched_at: string
+          id: string
+          isin: string | null
+          price_date: string
+          source: string
+          symbol: string
+          yahoo_ticker: string
+        }
+        Insert: {
+          close: number
+          fetched_at?: string
+          id?: string
+          isin?: string | null
+          price_date: string
+          source?: string
+          symbol: string
+          yahoo_ticker: string
+        }
+        Update: {
+          close?: number
+          fetched_at?: string
+          id?: string
+          isin?: string | null
+          price_date?: string
+          source?: string
+          symbol?: string
+          yahoo_ticker?: string
+        }
+        Relationships: []
+      }
       opening_positions: {
         Row: {
           acquisition_date: string
