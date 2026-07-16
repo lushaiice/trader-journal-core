@@ -236,17 +236,19 @@ function PortfolioPage() {
             </section>
           )}
 
-          <RiskSection
-            risk={risk}
-            topWeight={concentration.topWeight}
-            topSymbol={concentration.weights[0]?.symbol ?? null}
-            herfindahl={concentration.herfindahl}
+          <RiskCharts
+            trades={normalized}
+            capitalBase={capital.baseCapital}
+            inceptionDate={inceptionDate}
           />
 
           <AllocationSection
             allocation={allocation}
             weights={concentration.weights}
             capitalBase={capital.baseCapital}
+            topWeight={concentration.topWeight}
+            topSymbol={concentration.weights[0]?.symbol ?? null}
+            herfindahl={concentration.herfindahl}
           />
 
           <BenchmarkSection
