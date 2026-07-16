@@ -84,13 +84,25 @@ export function BenchmarkSection({ trades, capitalBase, inceptionDate }: Props) 
 
   const indexQuery = useIndexSeries(indexCode, fromDate ?? undefined);
 
-  const pnlByDate = useMemo<PnlPoint[]>(() => {
-    const curve = buildEquityCurve(trades);
-    return curve.map((p) => ({
-      date: toIsoDate(p.date),
-      cumulativePnl: p.cumulativePnl,
-    }));
+  const equitySymbols = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of trades) {
+      if (String(t.raw.trade.instrument_type ?? "equity") === "equity") s.add(t.symbol);
+    }
+    return Array.from(s);
   }, [trades]);
+
+  const historyQuery = useSymbolPriceHistory(equitySymbols, fromDate ?? undefined);
+
+  const pnlByDate = useMemo<PnlPoint[]>(() => {
+    const series = buildDailyTotalPnl({
+      trades,
+      priceHistoryBySymbol: historyQuery.data ?? {},
+      fromDate,
+      toDate,
+    });
+    return series.map((p) => ({ date: p.date, cumulativePnl: p.totalPnl }));
+  }, [trades, historyQuery.data, fromDate, toDate]);
 
   const comparison = useMemo(
     () =>
