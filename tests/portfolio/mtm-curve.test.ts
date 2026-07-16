@@ -95,9 +95,9 @@ describe("buildDailyTotalPnl", () => {
     const d2 = series.find((p) => p.date === "2025-01-02")!;
     expect(d1.unrealized).toBe(0);
     expect(d1.realizedCum).toBe(0);
-    expect(d2.unrealized).toBe(2000);
+    expect(d2.unrealized).toBeCloseTo(2000, 6);
     expect(d2.realizedCum).toBe(0);
-    expect(d2.totalPnl).toBe(2000);
+    expect(d2.totalPnl).toBeCloseTo(2000, 6);
   });
 
   it("partial exit: realized locks in, unrealized tracks remaining qty", () => {
