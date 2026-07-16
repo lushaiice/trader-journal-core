@@ -413,60 +413,6 @@ function Td({
   );
 }
 
-// ─────────────────────────── Risk section ───────────────────────────
-
-function RiskSection({
-  risk,
-  topWeight,
-  topSymbol,
-  herfindahl,
-}: {
-  risk: ReturnType<typeof computeReturnRisk>;
-  topWeight: number | null;
-  topSymbol: string | null;
-  herfindahl: number | null;
-}) {
-  const sortinoLabel = risk.sortino == null ? "—" : risk.sortino.toFixed(2);
-  const sortinoHint =
-    risk.sortino == null ? "Needs more closed trades with a losing trade" : "Per-trade, MAR = 0";
-  const volLabel = risk.volatility == null ? "—" : INR.format(risk.volatility);
-  const volHint =
-    risk.volatility == null
-      ? "Needs at least 2 closed trades"
-      : "Sample stdev of per-trade net P&L";
-  const concLabel =
-    topWeight == null
-      ? "—"
-      : `${(topWeight * 100).toFixed(1)}%${topSymbol ? ` · ${topSymbol}` : ""}`;
-  const concHint = herfindahl == null ? "No priced holdings" : `HHI ${herfindahl.toFixed(2)}`;
-
-  return (
-    <section className="mb-8">
-      <h2 className="eyebrow mb-3">Risk</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-        <MetricCard
-          label="Sortino"
-          value={sortinoLabel}
-          hint={sortinoHint}
-          tooltip="Return per unit of downside pain. Mean per-trade P&L divided by the deviation of losing trades. Higher is better."
-          tone={risk.sortino == null ? "neutral" : risk.sortino > 0 ? "positive" : "negative"}
-        />
-        <MetricCard
-          label="Volatility"
-          value={volLabel}
-          hint={volHint}
-          tooltip="Sample standard deviation of your per-trade net P&L. How much a typical trade's outcome swings around the average."
-        />
-        <MetricCard
-          label="Top holding"
-          value={concLabel}
-          hint={concHint}
-          tooltip="Share of your priced equity book in the single largest position. HHI is the sum of squared weights — 1.0 means fully concentrated."
-        />
-      </div>
-    </section>
-  );
-}
 
 // ─────────────────────── Allocation section ─────────────────────────
 
