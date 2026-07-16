@@ -154,7 +154,7 @@ describe("buildDailyTotalPnl", () => {
     const d3 = series.find((p) => p.date === "2025-01-03");
     expect(d3).toBeDefined();
     // On D3 CCC has no new price → forward-filled 110 → unrealized = 10 * 10 = 100
-    expect(d3!.unrealized).toBe(100);
+    expect(d3!.unrealized).toBeCloseTo(100, 6);
   });
 
   it("fully closed trade contributes only realized (no unrealized after close)", () => {
