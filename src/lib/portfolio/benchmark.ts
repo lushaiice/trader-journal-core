@@ -38,6 +38,8 @@ export interface BuildBenchmarkArgs {
   indexSeries: IndexClose[];
   capitalBase: number;
   fromDate?: string | null;
+  /** Inclusive upper bound (ISO 'YYYY-MM-DD'). null/undefined = open-ended. */
+  toDate?: string | null;
 }
 
 const EMPTY: BenchmarkComparison = {
@@ -59,15 +61,18 @@ export function buildBenchmarkComparison({
   indexSeries,
   capitalBase,
   fromDate = null,
+  toDate = null,
 }: BuildBenchmarkArgs): BenchmarkComparison {
-  const gate = fromDate ?? "";
+  const lo = fromDate ?? "";
+  const hi = toDate ?? "";
+  const inWindow = (d: string) => (lo ? d >= lo : true) && (hi ? d <= hi : true);
 
   const pnl = [...pnlByDate]
-    .filter((p) => (gate ? p.date >= gate : true))
+    .filter((p) => inWindow(p.date))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const idx = [...indexSeries]
-    .filter((p) => (gate ? p.price_date >= gate : true))
+    .filter((p) => inWindow(p.price_date))
     .sort((a, b) => a.price_date.localeCompare(b.price_date));
 
   if (!idx.length) return EMPTY;

@@ -93,6 +93,12 @@ function PortfolioPage() {
   );
 
   const capital = useCapitalState();
+  const inceptionDate = useMemo<string | null>(() => {
+    if (!capital.events.length) return null;
+    let earliest = capital.events[0].eventDate;
+    for (const e of capital.events) if (e.eventDate < earliest) earliest = e.eventDate;
+    return earliest;
+  }, [capital.events]);
 
   const risk = useMemo(() => computeReturnRisk(normalized), [normalized]);
   const concentration = useMemo(() => computeConcentration(result.holdings), [result.holdings]);
@@ -242,7 +248,11 @@ function PortfolioPage() {
             capitalBase={capital.baseCapital}
           />
 
-          <BenchmarkSection trades={normalized} capitalBase={capital.baseCapital} />
+          <BenchmarkSection
+            trades={normalized}
+            capitalBase={capital.baseCapital}
+            inceptionDate={inceptionDate}
+          />
 
           <RebalanceSection holdings={result.holdings} />
         </>

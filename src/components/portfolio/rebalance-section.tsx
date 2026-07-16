@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,17 +33,54 @@ export function RebalanceSection({ holdings }: Props) {
     [holdings],
   );
 
-  const defaults = useMemo(() => currentWeights(priced), [priced]);
-  const [targets, setTargets] = useState<Record<string, string>>(() =>
-    Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, v.toFixed(2)])),
-  );
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
 
-  // Reset when holdings identity changes (new priced set)
-  const sig = priced.map((h) => h.symbol).join("|");
+  // Drop excluded symbols that no longer exist in the priced set
+  const pricedSig = priced.map((h) => h.symbol).join("|");
   useEffect(() => {
-    setTargets(Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, v.toFixed(2)])));
+    setExcluded((prev) => {
+      const present = new Set(priced.map((h) => h.symbol));
+      let changed = false;
+      const next = new Set<string>();
+      for (const s of prev) {
+        if (present.has(s)) next.add(s);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig]);
+  }, [pricedSig]);
+
+  const included = useMemo(() => priced.filter((h) => !excluded.has(h.symbol)), [priced, excluded]);
+  const removed = useMemo(() => priced.filter((h) => excluded.has(h.symbol)), [priced, excluded]);
+
+  const includedDefaults = useMemo(() => currentWeights(included), [included]);
+  const [targets, setTargets] = useState<Record<string, string>>({});
+
+  // On first mount and whenever the priced identity changes, seed all targets
+  // from current weights. Later, when the included subset changes, keep the
+  // user's already-entered targets for symbols that remain and just seed newly
+  // included ones from the fresh (subset-relative) current weights.
+  useEffect(() => {
+    setTargets(
+      Object.fromEntries(Object.entries(currentWeights(priced)).map(([k, v]) => [k, v.toFixed(2)])),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pricedSig]);
+
+  const includedSig = included.map((h) => h.symbol).join("|");
+  useEffect(() => {
+    setTargets((prev) => {
+      const fresh = currentWeights(included);
+      const next: Record<string, string> = {};
+      for (const h of included) {
+        next[h.symbol] =
+          prev[h.symbol] !== undefined ? prev[h.symbol] : (fresh[h.symbol] ?? 0).toFixed(2);
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includedSig]);
 
   const numericTargets = useMemo(() => {
     const out: Record<string, number> = {};
@@ -56,18 +93,36 @@ export function RebalanceSection({ holdings }: Props) {
 
   const input = useMemo(
     () =>
-      priced.map((h) => ({
+      included.map((h) => ({
         symbol: h.symbol,
         marketValue: h.marketValue ?? 0,
         lastClose: h.lastClose,
       })),
-    [priced],
+    [included],
   );
 
   const result = useMemo(() => computeRebalance(input, numericTargets), [input, numericTargets]);
 
   const resetToCurrent = () => {
-    setTargets(Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, v.toFixed(2)])));
+    setTargets(
+      Object.fromEntries(Object.entries(includedDefaults).map(([k, v]) => [k, v.toFixed(2)])),
+    );
+  };
+
+  const removeSymbol = (symbol: string) => {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      next.add(symbol);
+      return next;
+    });
+  };
+
+  const addBackSymbol = (symbol: string) => {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      next.delete(symbol);
+      return next;
+    });
   };
 
   return (
@@ -86,6 +141,13 @@ export function RebalanceSection({ holdings }: Props) {
         <div className="surface-card p-6 text-sm text-muted-foreground text-center">
           No priced holdings to rebalance yet.
         </div>
+      ) : included.length === 0 ? (
+        <>
+          <div className="surface-card p-6 text-sm text-muted-foreground text-center">
+            All holdings removed — add at least one back to run the math.
+          </div>
+          {removed.length > 0 && <RemovedArea removed={removed} onAddBack={addBackSymbol} />}
+        </>
       ) : (
         <>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
@@ -133,6 +195,7 @@ export function RebalanceSection({ holdings }: Props) {
                     <Th align="center">Action</Th>
                     <Th align="right">Δ value</Th>
                     <Th align="right">Δ shares</Th>
+                    <Th align="center"> </Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,6 +253,17 @@ export function RebalanceSection({ holdings }: Props) {
                               ? "—"
                               : `~${row.deltaShares > 0 ? "+" : ""}${NUM.format(row.deltaShares)} sh`}
                         </Td>
+                        <Td align="center">
+                          <button
+                            type="button"
+                            onClick={() => removeSymbol(row.symbol)}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                            aria-label={`Remove ${row.symbol} from rebalance`}
+                            title={`Remove ${row.symbol}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </Td>
                       </tr>
                     );
                   })}
@@ -198,6 +272,8 @@ export function RebalanceSection({ holdings }: Props) {
             </div>
           </div>
 
+          {removed.length > 0 && <RemovedArea removed={removed} onAddBack={addBackSymbol} />}
+
           <p className="text-[11px] text-muted-foreground mt-2">
             Values use the last cached end-of-day close. Assumes total portfolio value is held
             constant — no new capital added.
@@ -205,6 +281,33 @@ export function RebalanceSection({ holdings }: Props) {
         </>
       )}
     </section>
+  );
+}
+
+function RemovedArea({
+  removed,
+  onAddBack,
+}: {
+  removed: Holding[];
+  onAddBack: (symbol: string) => void;
+}) {
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <span className="eyebrow text-muted-foreground">Removed</span>
+      {removed.map((h) => (
+        <button
+          key={h.symbol}
+          type="button"
+          onClick={() => onAddBack(h.symbol)}
+          className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card/50 px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:border-primary/60 transition-colors"
+          aria-label={`Add ${h.symbol} back to rebalance`}
+        >
+          <span className="font-medium text-foreground">{h.symbol}</span>
+          <Plus className="h-3 w-3 text-primary" />
+          <span className="text-[10px] uppercase tracking-wide">Add back</span>
+        </button>
+      ))}
+    </div>
   );
 }
 
