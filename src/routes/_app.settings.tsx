@@ -56,6 +56,9 @@ function SettingsPage() {
 
         <AppearanceSection />
 
+        <RiskFreeRateSection />
+
+
         <section className="surface-card p-6 space-y-5">
           <div>
             <h3 className="text-sm font-medium mb-1">Workspace preferences</h3>
