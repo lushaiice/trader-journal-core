@@ -85,7 +85,8 @@ async function getHeldSymbols(
   if (error) throw error;
   const seen = new Set<string>();
   for (const row of data ?? []) {
-    if (row.symbol) seen.add(row.symbol);
+    const it = String(row.instrument_type ?? "equity");
+    if (row.symbol && it === "equity") seen.add(row.symbol);
   }
   return Array.from(seen).map((symbol) => ({ symbol, isin: null }));
 }
