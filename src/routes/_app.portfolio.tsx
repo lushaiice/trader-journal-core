@@ -13,6 +13,12 @@ import { useTradesQuery } from "@/lib/trades/api";
 import { normalizeTrades } from "@/lib/analytics/normalize";
 import { useLatestPrices, useMarketDataFreshness, type LatestPrice } from "@/lib/market/api";
 import { buildHoldings, type Holding, type PriceRef } from "@/lib/portfolio/holdings";
+import {
+  computeAllocation,
+  computeConcentration,
+  computeReturnRisk,
+} from "@/lib/portfolio/risk";
+import { useCapitalState } from "@/hooks/capital";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/portfolio")({
