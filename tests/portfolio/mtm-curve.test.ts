@@ -85,7 +85,10 @@ describe("buildDailyTotalPnl", () => {
     const series = buildDailyTotalPnl({
       trades: [t],
       priceHistoryBySymbol: {
-        AAA: h([["2025-01-01", 100], ["2025-01-02", 120]]),
+        AAA: h([
+          ["2025-01-01", 100],
+          ["2025-01-02", 120],
+        ]),
       },
     });
     const d1 = series.find((p) => p.date === "2025-01-01")!;
@@ -142,7 +145,10 @@ describe("buildDailyTotalPnl", () => {
     const series = buildDailyTotalPnl({
       trades: [t, t2],
       priceHistoryBySymbol: {
-        CCC: h([["2025-01-01", 100], ["2025-01-02", 110]]),
+        CCC: h([
+          ["2025-01-01", 100],
+          ["2025-01-02", 110],
+        ]),
       },
     });
     const d3 = series.find((p) => p.date === "2025-01-03");
