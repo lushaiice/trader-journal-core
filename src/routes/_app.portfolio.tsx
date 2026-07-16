@@ -101,7 +101,7 @@ function PortfolioPage() {
     return earliest;
   }, [capital.events]);
 
-  const risk = useMemo(() => computeReturnRisk(normalized), [normalized]);
+  
   const concentration = useMemo(() => computeConcentration(result.holdings), [result.holdings]);
   const allocation = useMemo(
     () => computeAllocation(openTrades, priceBySymbol, capital.baseCapital),
