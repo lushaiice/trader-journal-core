@@ -31,9 +31,14 @@ import type {
   TimeRangeKey,
 } from "@/types/analytics";
 
+export type AssetFilter = "all" | "equity" | "futures" | "options";
+export type SideFilter = "all" | "long" | "short";
+
 export interface UseAnalyticsOptions {
   range?: TimeRangeKey;
   baseCapital?: number;
+  assetFilter?: AssetFilter;
+  sideFilter?: SideFilter;
 }
 
 export interface PortfolioAnalyticsResult {
@@ -57,12 +62,25 @@ export interface PortfolioAnalyticsResult {
 export function usePortfolioAnalytics(
   opts: UseAnalyticsOptions = {},
 ): PortfolioAnalyticsResult {
-  const { range: rangeKey = "ALL", baseCapital = 0 } = opts;
+  const {
+    range: rangeKey = "ALL",
+    baseCapital = 0,
+    assetFilter = "all",
+    sideFilter = "all",
+  } = opts;
   const { data, isLoading, isError } = useTrades();
 
   return useMemo(() => {
     const range = buildTimeRange(rangeKey);
-    const trades = normalizeTrades(data ?? []);
+    const normalized = normalizeTrades(data ?? []);
+    const trades = normalized.filter((t) => {
+      if (assetFilter !== "all") {
+        const inst = String(t.raw.trade.instrument_type ?? "equity");
+        if (inst !== assetFilter) return false;
+      }
+      if (sideFilter !== "all" && t.side !== sideFilter) return false;
+      return true;
+    });
     const filteredTrades = filterTradesByRange(trades, range);
     const summary = filteredTrades.length
       ? summarizeAnalytics(filteredTrades)
@@ -74,6 +92,7 @@ export function usePortfolioAnalytics(
     const tags = aggregateByTag(filteredTrades);
     const emotional = buildEmotionalAnalytics(filteredTrades);
     const discipline = buildDisciplineAnalytics(filteredTrades);
+
     return {
       isLoading,
       isError,
