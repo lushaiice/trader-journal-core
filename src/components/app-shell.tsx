@@ -180,3 +180,85 @@ function FeedbackTriggerButton({ onClick }: { onClick: () => void }) {
     </TooltipProvider>
   );
 }
+
+function MobileBottomNav({ path }: { path: string }) {
+  const [open, setOpen] = useState(false);
+  const primaries = MOBILE_PRIMARY.map((to) => NAV.find((n) => n.to === to)!).filter(Boolean);
+  const isPrimaryActive = primaries.some((p) => p.to === path);
+
+  return (
+    <>
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-50"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <ul className="grid grid-cols-5">
+          {primaries.map((item) => {
+            const active = path === item.to;
+            const Icon = item.icon;
+            return (
+              <li key={item.to}>
+                <Link
+                  to={item.to}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px]",
+                    active ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="truncate max-w-full px-1">{item.label.split(" ")[0]}</span>
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className={cn(
+                "flex w-full flex-col items-center justify-center gap-0.5 py-2 text-[10px]",
+                !isPrimaryActive ? "text-primary" : "text-muted-foreground",
+              )}
+              aria-label="More navigation"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+              <span>More</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Navigate</DrawerTitle>
+          </DrawerHeader>
+          <div
+            className="grid grid-cols-2 gap-2 px-4 pb-6"
+            style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+          >
+            {NAV.map((item) => {
+              const active = path === item.to;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md border px-3 py-3 text-sm transition-colors",
+                    active
+                      ? "border-primary/40 bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "border-sidebar-border text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
+  );
+}
