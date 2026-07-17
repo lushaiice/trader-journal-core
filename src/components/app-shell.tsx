@@ -19,12 +19,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -134,7 +129,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Mobile bottom nav */}
         <MobileBottomNav path={path} />
-
 
         <FloatingFeedbackButton />
       </div>
