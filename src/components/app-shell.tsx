@@ -133,31 +133,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
 
         {/* Mobile bottom nav */}
-        <nav
-          className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-50"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
-          <ul className="grid grid-cols-5">
-            {MOBILE_NAV.map((item) => {
-              const active = path === item.to;
-              const Icon = item.icon;
-              return (
-                <li key={item.to}>
-                  <Link
-                    to={item.to}
-                    className={cn(
-                      "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px]",
-                      active ? "text-primary" : "text-muted-foreground",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="truncate max-w-full px-1">{item.label.split(" ")[0]}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+        <MobileBottomNav path={path} />
+
 
         <FloatingFeedbackButton />
       </div>
