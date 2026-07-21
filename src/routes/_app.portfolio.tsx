@@ -186,7 +186,7 @@ function PortfolioPage() {
         <div className="surface-card p-8 text-center text-sm text-muted-foreground">
           Loading portfolio…
         </div>
-      ) : !hasAnyOpen ? (
+      ) : normalized.length === 0 ? (
         <EmptyState
           icon={PieChart}
           title="No open positions to value"
@@ -194,45 +194,54 @@ function PortfolioPage() {
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-            <MetricCard
-              label="Current value"
-              value={INR.format(result.totals.marketValue)}
-              hint={`${result.totals.pricedCount} priced`}
-            />
-            <MetricCard label="Invested (cost)" value={INR.format(result.totals.costValue)} />
-            <MetricCard
-              label="Unrealized P&L"
-              tone={pnlTone}
-              value={INR.format(result.totals.unrealizedPnl)}
-              hint={pnlPctLabel}
-            />
-            <MetricCard
-              label="Holdings"
-              value={String(result.holdings.length + result.unpricedEquity.length)}
-              hint={
-                result.totals.unpricedCount
-                  ? `${result.totals.unpricedCount} pending price`
-                  : undefined
-              }
-            />
-          </div>
+          {hasAnyOpen ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+                <MetricCard
+                  label="Current value"
+                  value={INR.format(result.totals.marketValue)}
+                  hint={`${result.totals.pricedCount} priced`}
+                />
+                <MetricCard label="Invested (cost)" value={INR.format(result.totals.costValue)} />
+                <MetricCard
+                  label="Unrealized P&L"
+                  tone={pnlTone}
+                  value={INR.format(result.totals.unrealizedPnl)}
+                  hint={pnlPctLabel}
+                />
+                <MetricCard
+                  label="Holdings"
+                  value={String(result.holdings.length + result.unpricedEquity.length)}
+                  hint={
+                    result.totals.unpricedCount
+                      ? `${result.totals.unpricedCount} pending price`
+                      : undefined
+                  }
+                />
+              </div>
 
-          {(result.holdings.length > 0 || result.unpricedEquity.length > 0) && (
-            <section className="mb-8">
-              <h2 className="eyebrow mb-3">Equity holdings</h2>
-              <HoldingsTable holdings={[...result.holdings, ...result.unpricedEquity]} />
-            </section>
-          )}
+              {(result.holdings.length > 0 || result.unpricedEquity.length > 0) && (
+                <section className="mb-8">
+                  <h2 className="eyebrow mb-3">Equity holdings</h2>
+                  <HoldingsTable holdings={[...result.holdings, ...result.unpricedEquity]} />
+                </section>
+              )}
 
-          {result.derivatives.length > 0 && (
-            <section className="mb-8">
-              <h2 className="eyebrow mb-1">Derivatives</h2>
-              <p className="text-xs text-muted-foreground mb-3">
-                No end-of-day price — shown at entry cost only.
-              </p>
-              <DerivativesList holdings={result.derivatives} />
-            </section>
+              {result.derivatives.length > 0 && (
+                <section className="mb-8">
+                  <h2 className="eyebrow mb-1">Derivatives</h2>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    No end-of-day price — shown at entry cost only.
+                  </p>
+                  <DerivativesList holdings={result.derivatives} />
+                </section>
+              )}
+            </>
+          ) : (
+            <div className="surface-card p-4 md:p-5 mb-6 text-sm text-muted-foreground">
+              No open positions to value right now. Import or log a trade to see your live book.
+              Your performance &amp; risk history is below.
+            </div>
           )}
 
           <RiskCharts
@@ -241,14 +250,16 @@ function PortfolioPage() {
             inceptionDate={inceptionDate}
           />
 
-          <AllocationSection
-            allocation={allocation}
-            weights={concentration.weights}
-            capitalBase={capital.baseCapital}
-            topWeight={concentration.topWeight}
-            topSymbol={concentration.weights[0]?.symbol ?? null}
-            herfindahl={concentration.herfindahl}
-          />
+          {hasAnyOpen && (
+            <AllocationSection
+              allocation={allocation}
+              weights={concentration.weights}
+              capitalBase={capital.baseCapital}
+              topWeight={concentration.topWeight}
+              topSymbol={concentration.weights[0]?.symbol ?? null}
+              herfindahl={concentration.herfindahl}
+            />
+          )}
 
           <BenchmarkSection
             trades={normalized}
@@ -256,7 +267,7 @@ function PortfolioPage() {
             inceptionDate={inceptionDate}
           />
 
-          <RebalanceSection holdings={result.holdings} />
+          {hasAnyOpen && <RebalanceSection holdings={result.holdings} />}
         </>
       )}
     </>
