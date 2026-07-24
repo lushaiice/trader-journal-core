@@ -44,28 +44,30 @@ interface Props {
 type Stage = "upload" | "preview";
 
 interface Preview extends ReconstructionResult {
-  variant: "equity" | "fo";
+  variant: "equity" | "fo" | "mixed";
   fillCount: number;
+  newFillCount: number;
   skippedRows: { rowNumber: number; reason: string }[];
 }
 
 export function ImportTradesDialog({ open, onOpenChange }: Props) {
+  const { user } = useAuth();
   const [stage, setStage] = useState<Stage>("upload");
   const [drag, setDrag] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [rawText, setRawText] = useState<string | null>(null);
+  const [parsedFills, setParsedFills] = useState<Fill[] | null>(null);
   const [resolving, setResolving] = useState<Orphan | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const importMut = useImportTrades();
+  const importMut = useReplaceImport();
   const actionsQ = useCorporateActions();
   const baselinesQ = useHoldingBaselines();
 
   const reset = () => {
     setStage("upload");
     setPreview(null);
-    setRawText(null);
+    setParsedFills(null);
     setError(null);
     setDrag(false);
     setParsing(false);
@@ -73,12 +75,34 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
     importMut.reset();
   };
 
-  const runReconstruct = (text: string) => {
-    const result = reconstructFromCsv(text, {
+  const runReconstruct = async (
+    fills: Fill[],
+    variant: "equity" | "fo" | "mixed",
+    skippedRows: { rowNumber: number; reason: string }[],
+  ) => {
+    if (!user) {
+      setError("You must be signed in to import.");
+      return;
+    }
+    // Merge newly-parsed fills with everything on record so the preview shows
+    // what the full book will look like after import.
+    const stored = await fetchAllUserFills(user.id);
+    const storedFills = stored.map(rowToFill);
+    const seen = new Set(storedFills.map((f) => `${f.segment.toUpperCase()}:${f.trade_id}`));
+    const newOnes = fills.filter((f) => !seen.has(`${f.segment.toUpperCase()}:${f.trade_id}`));
+    const merged = [...storedFills, ...newOnes];
+
+    const result = reconstructFromFills(merged, {
       actions: actionsQ.data ?? [],
       baselines: baselinesQ.data ?? [],
     });
-    setPreview(result);
+    setPreview({
+      ...result,
+      variant,
+      fillCount: merged.length,
+      newFillCount: newOnes.length,
+      skippedRows,
+    });
   };
 
   const handleFile = async (file: File) => {
@@ -90,8 +114,10 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
     setParsing(true);
     try {
       const text = await file.text();
-      setRawText(text);
-      runReconstruct(text);
+      const parsed = parseCsv(text);
+      const { variant, fills, skippedRows } = rowsToFills(parsed);
+      setParsedFills(fills);
+      await runReconstruct(fills, variant, skippedRows);
       setStage("preview");
     } catch (err) {
       setError((err as Error).message);
@@ -101,14 +127,10 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   };
 
   const onResolutionSaved = async () => {
-    // Refetch adjustments then re-run reconstruction on the same file.
-    const [a, b] = await Promise.all([actionsQ.refetch(), baselinesQ.refetch()]);
-    if (rawText) {
-      const result = reconstructFromCsv(rawText, {
-        actions: a.data ?? [],
-        baselines: b.data ?? [],
-      });
-      setPreview(result);
+    // Refetch adjustments then re-run reconstruction on the same parsed fills.
+    await Promise.all([actionsQ.refetch(), baselinesQ.refetch()]);
+    if (parsedFills && preview) {
+      await runReconstruct(parsedFills, preview.variant, preview.skippedRows);
     }
   };
 
@@ -120,16 +142,17 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   };
 
   const confirmImport = async () => {
-    if (!preview) return;
+    if (!preview || !parsedFills) return;
     try {
-      const outcome = await importMut.mutateAsync(preview.trades);
-      const parts = [
-        outcome.imported ? `${outcome.imported} imported` : null,
-        outcome.skipped ? `${outcome.skipped} already imported` : null,
-      ].filter(Boolean);
-      toast.success(parts.join(" · ") || "Nothing new to import");
+      const outcome = await importMut.mutateAsync({
+        newFills: parsedFills,
+        actions: actionsQ.data ?? [],
+        baselines: baselinesQ.data ?? [],
+      });
+      toast.success(
+        `Rebuilt book · ${outcome.total} trades from ${outcome.fillsAfter} fills`,
+      );
       onOpenChange(false);
-      // Delay reset so closing animation is clean.
       setTimeout(reset, 200);
     } catch (err) {
       toast.error("Import failed", { description: (err as Error).message });
@@ -143,6 +166,7 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
   const totalPnl = preview?.trades.reduce((a, t) => a + t.gross_pnl, 0) ?? 0;
   const chargesBatch = preview ? computeBatchCharges(preview.trades) : null;
   const totalCharges = chargesBatch?.total ?? 0;
+  const newFillCount = preview?.newFillCount ?? 0;
   const netPnl = totalPnl - totalCharges;
 
   const dateRange = (() => {
