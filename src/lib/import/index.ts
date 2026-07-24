@@ -34,3 +34,17 @@ export function reconstructFromCsv(
   const result = reconstructPositions(orders, variant === "fo", options);
   return { ...result, variant, fillCount: fills.length, skippedRows };
 }
+
+/**
+ * Reconstruct straight from a Fill[] (no CSV parsing). F&O vs equity is
+ * derived per position (segment/expiry) so a mixed EQ+FO fill set from
+ * stored broker fills reconstructs correctly in one call.
+ */
+export function reconstructFromFills(
+  fills: import("./types").Fill[],
+  options: ReconstructOptions = {},
+): ReconstructionResult & { fillCount: number } {
+  const orders = groupFillsIntoOrders(fills);
+  const result = reconstructPositions(orders, null, options);
+  return { ...result, fillCount: fills.length };
+}

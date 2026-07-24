@@ -339,6 +339,63 @@ export type Database = {
         }
         Relationships: []
       }
+      imported_fills: {
+        Row: {
+          created_at: string
+          exchange: string | null
+          expiry_date: string | null
+          id: string
+          isin: string | null
+          order_execution_time: string | null
+          order_id: string | null
+          price: number
+          quantity: number
+          segment: string
+          side: string
+          source: string
+          symbol: string
+          trade_date: string | null
+          trade_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exchange?: string | null
+          expiry_date?: string | null
+          id?: string
+          isin?: string | null
+          order_execution_time?: string | null
+          order_id?: string | null
+          price: number
+          quantity: number
+          segment: string
+          side: string
+          source?: string
+          symbol: string
+          trade_date?: string | null
+          trade_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exchange?: string | null
+          expiry_date?: string | null
+          id?: string
+          isin?: string | null
+          order_execution_time?: string | null
+          order_id?: string | null
+          price?: number
+          quantity?: number
+          segment?: string
+          side?: string
+          source?: string
+          symbol?: string
+          trade_date?: string | null
+          trade_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       imported_trade_fills: {
         Row: {
           created_at: string
