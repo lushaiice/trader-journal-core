@@ -132,3 +132,120 @@ export function useImportTrades() {
     },
   });
 }
+
+export interface ReplaceImportInput {
+  /** Newly-parsed fills from the file the user just uploaded. */
+  newFills: Fill[];
+  actions?: CorporateAction[];
+  baselines?: HoldingBaseline[];
+}
+
+export interface ReplaceImportOutcome {
+  total: number;
+  fillsBefore: number;
+  fillsAfter: number;
+  newFillsPersisted: number;
+}
+
+/**
+ * Idempotent, incremental, lossless import:
+ *  1. Upsert newly-parsed fills into imported_fills (fills-first for retry safety).
+ *  2. Re-fetch ALL of this user's imported_fills.
+ *  3. Reconstruct the full broker book (net-position + corporate actions + baselines).
+ *  4. REPLACE: delete all csv_import trades and insert the rebuilt book with charges.
+ *
+ * Manual edits made to imported trades are not preserved across a rebuild —
+ * that's by design; reflections/journals are separate and untouched.
+ */
+async function replaceImport(
+  userId: string,
+  input: ReplaceImportInput,
+): Promise<ReplaceImportOutcome> {
+  const { newFills, actions = [], baselines = [] } = input;
+
+  // 1. Persist the newly-parsed fills first (retry-safe on failure downstream).
+  const inserts = newFills.map((f) => fillToInsert(f, userId));
+  await upsertFills(inserts);
+
+  // 2. Rehydrate the full stored fill set.
+  const stored = await fetchAllUserFills(userId);
+  const fillsAfter = stored.length;
+  const fills = stored.map(rowToFill);
+
+  // 3. Reconstruct.
+  const { trades } = reconstructFromFills(fills, { actions, baselines });
+
+  // 4. REPLACE csv_import trades. FK cascades on trades → trade_exits and
+  //    trades → imported_trade_fills clean up dependent rows.
+  const { error: delErr } = await supabase
+    .from("trades")
+    .delete()
+    .eq("user_id", userId)
+    .eq("source", IMPORT_SOURCE);
+  if (delErr) throw delErr;
+
+  for (const t of trades) {
+    const exitsTotal = t.exits.reduce((a, e) => a + e.quantity, 0);
+    const status =
+      exitsTotal <= 0 ? "open" : exitsTotal >= t.quantity - 1e-9 ? "closed" : "partial";
+    const ch = computeTradeCharges(t);
+
+    const { data: inserted, error: tradeErr } = await supabase
+      .from("trades")
+      .insert({
+        user_id: userId,
+        symbol: t.symbol,
+        instrument_type: t.instrument_type,
+        side: t.side,
+        entry_date: t.entry_date,
+        entry_price: t.entry_price,
+        quantity: t.quantity,
+        brokerage: ch.brokerage,
+        taxes: ch.stt + ch.stamp + ch.sebi + ch.gst,
+        other_fees: ch.transaction,
+        tags: [],
+        notes: null,
+        screenshot_url: null,
+        status,
+        source: IMPORT_SOURCE,
+      })
+      .select("id")
+      .single();
+    if (tradeErr) throw tradeErr;
+
+    if (t.exits.length) {
+      const { error: exitErr } = await supabase.from("trade_exits").insert(
+        t.exits.map((e) => ({
+          trade_id: inserted.id,
+          user_id: userId,
+          exit_price: e.exit_price,
+          quantity: e.quantity,
+          exit_date: e.exit_date,
+        })),
+      );
+      if (exitErr) throw exitErr;
+    }
+  }
+
+  return {
+    total: trades.length,
+    fillsBefore: fillsAfter - inserts.filter((r) => !stored.some((s) => s.trade_id === r.trade_id && s.segment === r.segment)).length,
+    fillsAfter,
+    newFillsPersisted: inserts.length,
+  };
+}
+
+export function useReplaceImport() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ReplaceImportInput) => {
+      if (!user) throw new Error("Not signed in");
+      return replaceImport(user.id, input);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trades"] });
+    },
+  });
+}
+
