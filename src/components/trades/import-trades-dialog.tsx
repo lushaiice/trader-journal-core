@@ -44,7 +44,7 @@ interface Props {
 type Stage = "upload" | "preview";
 
 interface Preview extends ReconstructionResult {
-  variant: "equity" | "fo" | "mixed";
+  variant: "equity" | "fo";
   fillCount: number;
   newFillCount: number;
   skippedRows: { rowNumber: number; reason: string }[];
@@ -77,7 +77,7 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
 
   const runReconstruct = async (
     fills: Fill[],
-    variant: "equity" | "fo" | "mixed",
+    variant: "equity" | "fo",
     skippedRows: { rowNumber: number; reason: string }[],
   ) => {
     if (!user) {
