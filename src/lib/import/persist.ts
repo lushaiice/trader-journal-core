@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import type { ReconstructedTrade } from "./index";
+import type { Fill, ReconstructedTrade } from "./types";
+import { reconstructFromFills } from "./index";
+import type { CorporateAction, HoldingBaseline } from "./corporate-actions";
+import { fetchAllUserFills, fillToInsert, rowToFill, upsertFills } from "./fills-repo";
 import { computeTradeCharges } from "@/lib/charges/engine";
 
 // Must match the trades.source CHECK constraint: 'manual' | 'csv_import' | 'kite'.
