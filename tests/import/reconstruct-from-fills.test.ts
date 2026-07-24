@@ -24,7 +24,7 @@ describe("reconstructFromFills", () => {
   it("reconstructs a mixed EQ + FO fill set in one call", () => {
     const fills: Fill[] = [
       // Equity round-trip
-      f({ trade_id: "e1", order_id: "eo1", side: undefined as never, trade_type: "buy", quantity: 10, price: 100 }),
+      f({ trade_id: "e1", order_id: "eo1", trade_type: "buy", quantity: 10, price: 100 }),
       f({
         trade_id: "e2",
         order_id: "eo2",
