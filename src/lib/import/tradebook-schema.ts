@@ -112,7 +112,7 @@ export function rowsToFills(parsed: ParsedCsv): {
       symbol: v.symbol.toUpperCase(),
       segment: v.segment.toUpperCase(),
       expiry_date: variant === "fo" ? v.expiry_date || null : null,
-      isin: variant === "equity" ? (v.isin || null) : null,
+      isin: variant === "equity" ? v.isin || null : null,
       exchange: (v.exchange || "NSE").toUpperCase(),
       trade_date: v.trade_date,
       trade_type: v.trade_type,

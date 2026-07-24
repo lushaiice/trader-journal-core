@@ -229,7 +229,11 @@ async function replaceImport(
 
   return {
     total: trades.length,
-    fillsBefore: fillsAfter - inserts.filter((r) => !stored.some((s) => s.trade_id === r.trade_id && s.segment === r.segment)).length,
+    fillsBefore:
+      fillsAfter -
+      inserts.filter(
+        (r) => !stored.some((s) => s.trade_id === r.trade_id && s.segment === r.segment),
+      ).length,
     fillsAfter,
     newFillsPersisted: inserts.length,
   };
@@ -248,4 +252,3 @@ export function useReplaceImport() {
     },
   });
 }
-

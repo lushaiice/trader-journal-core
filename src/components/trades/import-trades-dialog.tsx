@@ -149,9 +149,7 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
         actions: actionsQ.data ?? [],
         baselines: baselinesQ.data ?? [],
       });
-      toast.success(
-        `Rebuilt book · ${outcome.total} trades from ${outcome.fillsAfter} fills`,
-      );
+      toast.success(`Rebuilt book · ${outcome.total} trades from ${outcome.fillsAfter} fills`);
       onOpenChange(false);
       setTimeout(reset, 200);
     } catch (err) {
@@ -309,8 +307,8 @@ export function ImportTradesDialog({ open, onOpenChange }: Props) {
             <div className="rounded-md border border-border bg-muted/30 p-3 text-[11px] text-muted-foreground">
               Importing rebuilds your broker-imported trades from all fills on record. Import your
               full tradebook the first time; later updates merge automatically. Manual edits to
-              imported trades aren&rsquo;t preserved across a rebuild — your reflections and journals
-              are separate and untouched.
+              imported trades aren&rsquo;t preserved across a rebuild — your reflections and
+              journals are separate and untouched.
             </div>
 
             {preview.trades.length > 0 && (
