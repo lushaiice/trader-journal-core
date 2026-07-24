@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { ClearAllTradesSection } from "@/components/settings/clear-all-trades";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -159,6 +160,8 @@ function SettingsPage() {
             }
           />
         </section>
+
+        <ClearAllTradesSection />
       </div>
     </>
   );
