@@ -160,6 +160,8 @@ function SettingsPage() {
             }
           />
         </section>
+
+        <ClearAllTradesSection />
       </div>
     </>
   );
