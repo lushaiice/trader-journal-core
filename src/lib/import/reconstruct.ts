@@ -42,7 +42,7 @@ function positionKey(o: Order): string {
  */
 export function reconstructPositions(
   orders: Order[],
-  hasExpiryColumn: boolean,
+  hasExpiryColumn: boolean | null = null,
   options: ReconstructOptions = {},
 ): ReconstructionResult {
   const actions = options.actions ?? [];
@@ -62,7 +62,13 @@ export function reconstructPositions(
 
   for (const [, posOrders] of byPos) {
     posOrders.sort((a, b) => a.execution_time.localeCompare(b.execution_time));
-    walkPosition(posOrders, hasExpiryColumn, trades, orphans);
+    // Per-position FO detection when no global flag is supplied: FO segment or
+    // an expiry_date on the first order marks the whole position as F&O.
+    const isFO =
+      hasExpiryColumn === null
+        ? posOrders[0].segment.toUpperCase() === "FO" || posOrders[0].expiry_date != null
+        : hasExpiryColumn;
+    walkPosition(posOrders, isFO, trades, orphans);
   }
 
   if (baselines.length > 0 && orphans.length > 0) {
